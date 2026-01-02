@@ -12,125 +12,101 @@
     <div id="loading-screen">
         <div class="loader-content">
             <div class="app-logo-large">⚡</div>
-            <h1 class="logo-text">Study Ping</h1>
+            <h1 class="logo-text" style="font-weight:800; letter-spacing:-1px;">Study Ping</h1>
             <div class="spinner"></div>
         </div>
     </div>
 
     <div id="setup-screen" class="screen-overlay hidden">
         <div class="setup-card">
-            <div class="setup-icon">👤</div>
-            <h2>Create Profile</h2>
-            <p>Welcome! Please set up your local student account to continue.</p>
-            <div class="input-group">
-                <input type="text" id="user-name-input" placeholder="Full Name" autocomplete="off">
-                <input type="text" id="user-class-input" placeholder="Class / Year" autocomplete="off">
-            </div>
-            <button class="btn-setup" onclick="completeSetup()">Get Started</button>
+            <div style="font-size: 3rem; margin-bottom: 10px;">👤</div>
+            <h2 style="font-weight:800; color:#2563EB;">Create Profile</h2>
+            <p style="color:#64748B; margin-bottom:25px;">Set up your local account to start tracking.</p>
+            <input type="text" id="user-name-input" class="styled-input" placeholder="Your Name" style="margin-bottom:10px;">
+            <input type="text" id="user-class-input" class="styled-input" placeholder="Your Class">
+            <button class="btn-setup" onclick="completeSetup()" style="margin-top:20px; background:#2563EB; color:white; border:none; padding:15px; border-radius:12px; width:100%; font-weight:700; cursor:pointer;">Get Started</button>
         </div>
     </div>
 
     <div id="app-shell" class="hidden">
         <header>
-            <button id="menu-btn" class="menu-trigger">
-                <span></span>
-                <span></span>
-                <span></span>
+            <button id="menu-btn" class="menu-trigger" onclick="toggleSidebar()" style="background:none; border:none; cursor:pointer; padding:10px;">
+                <div style="width:24px; height:3px; background:#2563EB; margin-bottom:5px; border-radius:2px;"></div>
+                <div style="width:24px; height:3px; background:#2563EB; margin-bottom:5px; border-radius:2px;"></div>
+                <div style="width:24px; height:3px; background:#2563EB; border-radius:2px;"></div>
             </button>
-            <div class="brand">
-                <span class="logo-bolt">⚡</span>
-                <span class="brand-name">Study Ping</span>
+            <div class="brand" style="display:flex; align-items:center; gap:8px; margin-left:10px;">
+                <span style="font-size:1.5rem;">⚡</span>
+                <span style="font-weight:800; color:#2563EB; font-size:1.2rem;">Study Ping</span>
             </div>
         </header>
 
         <nav id="sidebar">
-            <div class="sidebar-content">
-                <div class="nav-section">
-                    <h3>Navigation</h3>
-                    <ul class="nav-menu">
-                        <li onclick="filterView('all')" class="active">🏠 Dashboard</li>
-                        <li onclick="filterView('priority')">⭐ Priority</li>
-                        <li onclick="filterView('today')">⏰ Due Today</li>
-                        <li onclick="filterView('exams')">🚨 Exams Corner</li>
-                    </ul>
-                </div>
-                
-                <div class="sidebar-footer">
-                    <div class="profile-box">
-                        <div class="profile-info">
-                            <strong id="side-name">Student</strong>
-                            <span id="side-class">Class --</span>
-                        </div>
-                        <button class="edit-profile-btn" onclick="openEditProfile()">Edit</button>
+            <ul class="nav-menu" style="margin-top:80px; list-style:none; padding:20px;">
+                <li onclick="filterView('all')" style="padding:15px; border-radius:12px; cursor:pointer; font-weight:600;">🏠 Dashboard</li>
+                <li onclick="filterView('priority')" style="padding:15px; border-radius:12px; cursor:pointer; font-weight:600;">⭐ Priority</li>
+                <li onclick="filterView('today')" style="padding:15px; border-radius:12px; cursor:pointer; font-weight:600;">⏰ Due Today</li>
+                <li onclick="filterView('exams')" style="padding:15px; border-radius:12px; cursor:pointer; font-weight:600;">🚨 Exams Corner</li>
+            </ul>
+            
+            <div class="sidebar-footer" style="margin-top:auto; padding:20px; border-top:1px solid #E2E8F0; background:#F8FAFC;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <strong id="side-name" style="display:block;">Student</strong>
+                        <span id="side-class" style="font-size:0.8rem; color:#64748B;">Class --</span>
                     </div>
+                    <button onclick="openEditProfile()" style="background:none; border:1px solid #2563EB; color:#2563EB; padding:5px 10px; border-radius:6px; cursor:pointer; font-size:0.8rem;">Edit</button>
                 </div>
+                <p style="font-size: 0.75rem; margin-top: 20px; opacity: 0.7; text-align: center; color: #1E293B; font-weight: 600;">
+                    Built by a student. Share if it helps you.
+                </p>
             </div>
         </nav>
-        <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
+        <div id="sidebar-overlay" onclick="toggleSidebar()" style="position:fixed; inset:0; background:rgba(0,0,0,0.4); display:none; z-index:1500; backdrop-filter:blur(2px);"></div>
 
         <main class="main-container">
-            <div class="hero-section">
-                <h1 id="greet-name">Hi! 👋</h1>
-                <p id="greet-class">Manage your studies efficiently.</p>
+            <div class="hero-section" style="padding:20px 0;">
+                <h1 id="greet-name" style="font-weight:800; font-size:2.2rem; margin:0;">Hi! 👋</h1>
+                <p id="greet-class" style="color:#64748B; margin-top:5px;">Manage your studies efficiently.</p>
             </div>
-
-            <div class="task-section">
-                <h2 id="view-label">Upcoming Tasks</h2>
-                <div id="task-list">
-                    </div>
-            </div>
+            <div id="task-list"></div>
         </main>
 
-        <button id="fab" onclick="openModal()">+</button>
+        <button id="fab" onclick="openModal()" style="position:fixed; bottom:30px; right:25px; width:65px; height:65px; border-radius:20px; background:#F59E0B; color:white; font-size:2.5rem; border:none; box-shadow:0 8px 25px rgba(245,158,11,0.4); cursor:pointer; z-index:900;">+</button>
     </div>
 
     <div id="task-modal" class="modal-overlay hidden">
         <div class="modal-content">
-            <div class="modal-header">
-                <h3>New Task</h3>
-                <button class="close-x" onclick="closeModal()">×</button>
-            </div>
-            <div class="modal-body">
-                <input type="text" id="task-title" placeholder="Task Title" class="styled-input">
-                
-                <div class="input-row">
-                    <select id="task-subject" class="styled-select">
-                        <option value="" disabled selected>Subject</option>
-                        <option value="Math">Math</option><option value="English">English</option>
-                        <option value="Biology">Biology</option><option value="Chemistry">Chemistry</option>
-                        <option value="Physics">Physics</option><option value="History">History</option>
-                        <option value="Geography">Geography</option><option value="Civics">Civics</option>
-                        <option value="Computer">Computer</option><option value="Finance">Finance</option>
-                        <option value="Sanskrit">Sanskrit</option><option value="French">French</option>
-                    </select>
-                    <select id="task-type" class="styled-select">
-                        <option value="Homework">Homework</option>
-                        <option value="Exam">Exam</option>
-                        <option value="Test">Test</option>
-                    </select>
-                </div>
-
-                <div class="input-row">
-                    <input type="date" id="task-date" class="styled-input">
-                    <select id="task-priority" class="styled-select">
-                        <option value="Low">Low</option>
-                        <option value="Medium">Medium</option>
-                        <option value="High">High</option>
-                    </select>
-                </div>
-                
-                <button class="btn-add-task" onclick="addTask()">Save Task</button>
-            </div>
+            <h3 style="font-weight:800; margin-bottom:20px;">New Task</h3>
+            <input type="text" id="task-title" class="styled-input" placeholder="Task Title">
+            <select id="task-subject" class="styled-input">
+                <option value="" disabled selected>Subject</option>
+                <option value="Math">Math</option><option value="English">English</option>
+                <option value="Biology">Biology</option><option value="Chemistry">Chemistry</option>
+                <option value="Physics">Physics</option><option value="History">History</option>
+                <option value="Geography">Geography</option><option value="Civics">Civics</option>
+                <option value="Computer">Computer</option><option value="Finance">Finance</option>
+                <option value="Sanskrit">Sanskrit</option><option value="French">French</option>
+            </select>
+            <select id="task-type" class="styled-input">
+                <option value="Homework">Homework</option><option value="Exam">Exam</option><option value="Test">Test</option>
+            </select>
+            <input type="date" id="task-date" class="styled-input">
+            <select id="task-priority" class="styled-input">
+                <option value="Low">Low</option><option value="Medium">Medium</option><option value="High">High</option>
+            </select>
+            <button class="btn-setup" onclick="addTask()" style="background:#2563EB; color:white; border:none; padding:15px; border-radius:12px; width:100%; font-weight:700; cursor:pointer;">Save Task</button>
+            <button onclick="closeModal()" style="background:none; border:none; color:#64748B; width:100%; padding:10px; cursor:pointer; margin-top:10px;">Cancel</button>
         </div>
     </div>
 
     <div id="edit-modal" class="modal-overlay hidden">
         <div class="modal-content">
-            <h3>Update Profile</h3>
+            <h3 style="font-weight:800; margin-bottom:20px;">Update Profile</h3>
             <input type="text" id="edit-name-input" class="styled-input" placeholder="Name">
             <input type="text" id="edit-class-input" class="styled-input" placeholder="Class">
-            <button class="btn-add-task" onclick="saveProfileEdit()">Save Changes</button>
-            <button class="btn-cancel" onclick="closeEditProfile()">Cancel</button>
+            <button class="btn-setup" onclick="saveProfileEdit()" style="background:#2563EB; color:white; border:none; padding:15px; border-radius:12px; width:100%; font-weight:700; cursor:pointer;">Save Changes</button>
+            <button onclick="closeEditProfile()" style="background:none; border:none; color:#64748B; width:100%; padding:10px; cursor:pointer; margin-top:10px;">Cancel</button>
         </div>
     </div>
 
