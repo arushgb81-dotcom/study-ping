@@ -1,6 +1,6 @@
-// Local Storage Keys
-const DB_TASKS = 'studyping_tasks_pro';
-const DB_USER = 'studyping_user_pro';
+// --- DATA STORAGE ---
+const DB_TASKS = 'studyping_tasks_v5';
+const DB_USER = 'studyping_user_v5';
 
 let tasks = JSON.parse(localStorage.getItem(DB_TASKS)) || [];
 let user = JSON.parse(localStorage.getItem(DB_USER)) || null;
@@ -10,13 +10,13 @@ let currentFilter = 'all';
 window.onload = () => {
     const loader = document.getElementById('loading-screen');
     
-    // Always show loader for 2 seconds for that "smooth" feel
+    // Always show loader for 2 seconds for a professional feel
     setTimeout(() => {
         loader.style.opacity = '0';
         setTimeout(() => {
             loader.classList.add('hidden');
             
-            // Step 2: Check for User
+            // Check for profile AFTER loading
             if (!user) {
                 document.getElementById('setup-screen').classList.remove('hidden');
             } else {
@@ -26,61 +26,90 @@ window.onload = () => {
     }, 2000);
 };
 
-// --- SETUP ACCOUNT ---
+// --- ACCOUNT SETUP ---
 function completeSetup() {
-    const nameInput = document.getElementById('user-name-input').value;
-    const classInput = document.getElementById('user-class-input').value;
+    const name = document.getElementById('user-name-input').value;
+    const cls = document.getElementById('user-class-input').value;
 
-    if (nameInput.trim() && classInput.trim()) {
-        user = { name: nameInput, class: classInput };
+    if (name.trim() && cls.trim()) {
+        user = { name, class: cls };
         localStorage.setItem(DB_USER, JSON.stringify(user));
         document.getElementById('setup-screen').classList.add('hidden');
         launchApp();
     } else {
-        alert("Please fill in both fields to create your account.");
+        alert("Please enter your name and class!");
     }
 }
 
 function launchApp() {
     document.getElementById('app-shell').classList.remove('hidden');
-    updateUIStrings();
+    updateUI();
     renderTasks();
 }
 
-function updateUIStrings() {
+function updateUI() {
     document.getElementById('greet-name').innerText = `Hi ${user.name}! 👋`;
     document.getElementById('greet-class').innerText = `Your Current Class: ${user.class}`;
     document.getElementById('side-name').innerText = user.name;
     document.getElementById('side-class').innerText = user.class;
 }
 
-// --- SIDEBAR & NAVIGATION ---
+// --- SIDEBAR LOGIC (Fixing the "not working" issue) ---
 function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('sidebar-overlay');
-    sidebar.classList.toggle('active');
-    overlay.style.display = sidebar.classList.contains('active') ? 'block' : 'none';
+    
+    if (sidebar.classList.contains('active')) {
+        sidebar.classList.remove('active');
+        overlay.style.display = 'none';
+    } else {
+        sidebar.classList.add('active');
+        overlay.style.display = 'block';
+    }
 }
-
-document.getElementById('menu-btn').onclick = toggleSidebar;
 
 function filterView(view) {
     currentFilter = view;
-    document.getElementById('view-label').innerText = view.toUpperCase() + " TASKS";
     
-    // Update Active UI in sidebar
-    document.querySelectorAll('.nav-menu li').forEach(li => li.classList.remove('active'));
-    event.target.classList.add('active');
-
-    toggleSidebar();
+    // Update the heading on the dashboard
+    const titles = {
+        all: "Upcoming Tasks",
+        priority: "⭐ Priority Tasks",
+        today: "⏰ Due Today",
+        exams: "🚨 Exams Corner"
+    };
+    document.getElementById('greet-class').innerText = titles[view] || "Tasks";
+    
+    toggleSidebar(); // Close sidebar after clicking
     renderTasks();
 }
 
-// --- TASK MODAL ---
+// --- MODAL CONTROLS ---
 function openModal() { document.getElementById('task-modal').classList.remove('hidden'); }
 function closeModal() { document.getElementById('task-modal').classList.add('hidden'); }
+function openEditProfile() { 
+    document.getElementById('edit-name-input').value = user.name;
+    document.getElementById('edit-class-input').value = user.class;
+    document.getElementById('edit-modal').classList.remove('hidden'); 
+    toggleSidebar();
+}
+function closeEditProfile() { document.getElementById('edit-modal').classList.add('hidden'); }
 
-// --- TASK ACTIONS ---
+// --- PROFILE EDIT ---
+function saveProfileEdit() {
+    const newName = document.getElementById('edit-name-input').value;
+    const newCls = document.getElementById('edit-class-input').value;
+    
+    if(newName && newCls) {
+        user.name = newName;
+        user.class = newCls;
+        localStorage.setItem(DB_USER, JSON.stringify(user));
+        updateUI();
+        closeEditProfile();
+    }
+}
+
+// --- TASK CRUD ---
 function addTask() {
     const title = document.getElementById('task-title').value;
     const subject = document.getElementById('task-subject').value;
@@ -88,24 +117,23 @@ function addTask() {
     const date = document.getElementById('task-date').value;
     const priority = document.getElementById('task-priority').value;
 
-    if (!title || !subject || !date) return alert("Please fill all required fields!");
+    if (!title || !subject || !date) return alert("Fill in the Title, Subject, and Date!");
 
-    const newTask = {
-        id: Date.now(),
-        title, subject, type, date, priority,
-        completed: false
-    };
-
-    tasks.push(newTask);
+    tasks.push({ id: Date.now(), title, subject, type, date, priority, completed: false });
     localStorage.setItem(DB_TASKS, JSON.stringify(tasks));
+    
+    // Reset form
+    document.getElementById('task-title').value = '';
     closeModal();
     renderTasks();
 }
 
 function deleteTask(id) {
-    tasks = tasks.filter(t => t.id !== id);
-    localStorage.setItem(DB_TASKS, JSON.stringify(tasks));
-    renderTasks();
+    if(confirm("Delete this task?")) {
+        tasks = tasks.filter(t => t.id !== id);
+        localStorage.setItem(DB_TASKS, JSON.stringify(tasks));
+        renderTasks();
+    }
 }
 
 function toggleStatus(id) {
@@ -121,7 +149,7 @@ function renderTasks() {
 
     let filtered = [...tasks].sort((a,b) => new Date(a.date) - new Date(b.date));
 
-    // Filter Logic
+    // Filters
     if (currentFilter === 'priority') filtered = filtered.filter(t => t.priority === 'High');
     if (currentFilter === 'exams') filtered = filtered.filter(t => t.type === 'Exam' || t.type === 'Test');
     if (currentFilter === 'today') {
@@ -130,34 +158,25 @@ function renderTasks() {
     }
 
     if (filtered.length === 0) {
-        container.innerHTML = `<p style="text-align:center; opacity:0.5;">No tasks found here.</p>`;
+        container.innerHTML = `<p style="text-align:center; padding:40px; opacity:0.5;">No tasks found.</p>`;
         return;
     }
 
-    filtered.forEach(task => {
-        const item = document.createElement('div');
-        item.className = `task-item ${task.completed ? 'completed' : ''}`;
-        item.innerHTML = `
-            <div onclick="toggleStatus(${task.id})" style="flex-grow:1; cursor:pointer;">
-                <strong style="display:block; font-size:1.1rem;">${task.title}</strong>
-                <small style="color:#64748B;">${task.subject} • ${task.type} • ${task.date}</small>
+    filtered.forEach(t => {
+        const div = document.createElement('div');
+        div.className = 'task-item'; // Styles from CSS
+        div.style = `background:white; padding:15px; border-radius:15px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; border-left:6px solid #2563EB; box-shadow:0 4px 6px rgba(0,0,0,0.05); ${t.completed ? 'opacity:0.5;' : ''}`;
+        
+        div.innerHTML = `
+            <div onclick="toggleStatus(${t.id})" style="flex-grow:1; cursor:pointer;">
+                <strong style="${t.completed ? 'text-decoration:line-through;' : ''}">${t.title}</strong>
+                <div style="font-size:0.8rem; color:#64748B;">${t.subject} • ${t.date}</div>
             </div>
             <div style="display:flex; align-items:center; gap:10px;">
-                <span style="font-size:0.8rem; font-weight:bold; color:var(--primary);">${task.priority}</span>
-                <button onclick="deleteTask(${task.id})" style="background:none; border:none; color:var(--red); font-size:1.2rem; cursor:pointer;">🗑️</button>
+                <span style="font-size:1.2rem;">${t.completed ? '✅' : '⭕'}</span>
+                <button onclick="deleteTask(${t.id})" style="background:none; border:none; color:#EF4444; cursor:pointer;">🗑️</button>
             </div>
         `;
-        container.appendChild(item);
+        container.appendChild(div);
     });
-}
-
-// --- PROFILE EDIT ---
-function openEditProfile() { document.getElementById('edit-modal').classList.remove('hidden'); }
-function closeEditProfile() { document.getElementById('edit-modal').classList.add('hidden'); }
-function saveProfileEdit() {
-    user.name = document.getElementById('edit-name-input').value;
-    user.class = document.getElementById('edit-class-input').value;
-    localStorage.setItem(DB_USER, JSON.stringify(user));
-    updateUIStrings();
-    closeEditProfile();
 }
