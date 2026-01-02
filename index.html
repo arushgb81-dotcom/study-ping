@@ -3,110 +3,178 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Study Ping</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <title>Study Ping v1.2</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="light-mode">
 
     <div id="loading-screen">
         <div class="loader-content">
             <div class="app-logo-large">⚡</div>
-            <h1 class="logo-text" style="font-weight:800; letter-spacing:-1px;">Study Ping</h1>
+            <h1 class="logo-text">Study Ping</h1>
             <div class="spinner"></div>
         </div>
     </div>
 
-    <div id="setup-screen" class="screen-overlay hidden">
-        <div class="setup-card">
-            <div style="font-size: 3rem; margin-bottom: 10px;">👤</div>
-            <h2 style="font-weight:800; color:#2563EB;">Create Profile</h2>
-            <p style="color:#64748B; margin-bottom:25px;">Set up your local account to start tracking.</p>
-            <input type="text" id="user-name-input" class="styled-input" placeholder="Your Name" style="margin-bottom:10px;">
-            <input type="text" id="user-class-input" class="styled-input" placeholder="Your Class">
-            <button class="btn-setup" onclick="completeSetup()" style="margin-top:20px; background:#2563EB; color:white; border:none; padding:15px; border-radius:12px; width:100%; font-weight:700; cursor:pointer;">Get Started</button>
-        </div>
-    </div>
-
-    <div id="app-shell" class="hidden">
-        <header>
-            <button id="menu-btn" class="menu-trigger" onclick="toggleSidebar()" style="background:none; border:none; cursor:pointer; padding:10px;">
-                <div style="width:24px; height:3px; background:#2563EB; margin-bottom:5px; border-radius:2px;"></div>
-                <div style="width:24px; height:3px; background:#2563EB; margin-bottom:5px; border-radius:2px;"></div>
-                <div style="width:24px; height:3px; background:#2563EB; border-radius:2px;"></div>
-            </button>
-            <div class="brand" style="display:flex; align-items:center; gap:8px; margin-left:10px;">
-                <span style="font-size:1.5rem;">⚡</span>
-                <span style="font-weight:800; color:#2563EB; font-size:1.2rem;">Study Ping</span>
+    <section id="view-setup" class="page-view hidden">
+        <div class="setup-container">
+            <div class="setup-card fade-in">
+                <div class="setup-icon">🎓</div>
+                <h2>Create Profile</h2>
+                <p>Let's set up your student profile.</p>
+                <input type="text" id="setup-name" class="styled-input" placeholder="Full Name">
+                
+                <select id="setup-class" class="styled-input" onchange="toggleStream('setup')">
+                    <option value="" disabled selected>Select Class</option>
+                    </select>
+                
+                <div id="setup-stream-div" class="hidden">
+                    <select id="setup-stream" class="styled-input">
+                        <option value="" disabled selected>Select Stream</option>
+                        <option value="Science">Science</option>
+                        <option value="Commerce">Commerce</option>
+                        <option value="Humanities">Humanities</option>
+                    </select>
+                </div>
+                <button class="btn-primary" onclick="finishSetup()">Get Started</button>
             </div>
+        </div>
+    </section>
+
+    <section id="view-main" class="page-view hidden">
+        <header class="app-header">
+            <button class="menu-btn" onclick="toggleSidebar()">
+                <div class="line"></div><div class="line"></div><div class="line"></div>
+            </button>
+            <div class="brand">Study Ping <span class="version-badge">v1.2</span></div>
         </header>
 
         <nav id="sidebar">
-            <ul class="nav-menu" style="margin-top:80px; list-style:none; padding:20px;">
-                <li onclick="filterView('all')" style="padding:15px; border-radius:12px; cursor:pointer; font-weight:600;">🏠 Dashboard</li>
-                <li onclick="filterView('priority')" style="padding:15px; border-radius:12px; cursor:pointer; font-weight:600;">⭐ Priority</li>
-                <li onclick="filterView('today')" style="padding:15px; border-radius:12px; cursor:pointer; font-weight:600;">⏰ Due Today</li>
-                <li onclick="filterView('exams')" style="padding:15px; border-radius:12px; cursor:pointer; font-weight:600;">🚨 Exams Corner</li>
+            <ul class="nav-menu">
+                <li onclick="setFilter('all')">🏠 Dashboard</li>
+                <li onclick="setFilter('priority')">🔥 High Priority</li>
+                <li onclick="setFilter('today')">⏰ Due Today</li>
+                <li onclick="setFilter('exams')">📝 Exams</li> <li onclick="navigateTo('view-about')">ℹ️ About App</li> <li class="toggle-li">
+                    <span>🌙 Dark Mode</span>
+                    <label class="switch">
+                        <input type="checkbox" id="theme-toggle" onchange="toggleTheme(this)">
+                        <span class="slider round"></span>
+                    </label>
+                </li>
             </ul>
-            
-            <div class="sidebar-footer" style="margin-top:auto; padding:20px; border-top:1px solid #E2E8F0; background:#F8FAFC;">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <div>
-                        <strong id="side-name" style="display:block;">Student</strong>
-                        <span id="side-class" style="font-size:0.8rem; color:#64748B;">Class --</span>
+
+            <div class="sidebar-footer">
+                <div class="profile-row">
+                    <div class="user-info">
+                        <strong id="side-name">User</strong>
+                        <span id="side-class">Class --</span>
                     </div>
-                    <button onclick="openEditProfile()" style="background:none; border:1px solid #2563EB; color:#2563EB; padding:5px 10px; border-radius:6px; cursor:pointer; font-size:0.8rem;">Edit</button>
+                    <button class="edit-btn" onclick="openEditModal()">✏️</button>
                 </div>
-                <p style="font-size: 0.75rem; margin-top: 20px; opacity: 0.7; text-align: center; color: #1E293B; font-weight: 600;">
-                    Built by a student. Share if it helps you.
-                </p>
             </div>
         </nav>
-        <div id="sidebar-overlay" onclick="toggleSidebar()" style="position:fixed; inset:0; background:rgba(0,0,0,0.4); display:none; z-index:1500; backdrop-filter:blur(2px);"></div>
+        <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
 
-        <main class="main-container">
-            <div class="hero-section" style="padding:20px 0;">
-                <h1 id="greet-name" style="font-weight:800; font-size:2.2rem; margin:0;">Hi! 👋</h1>
-                <p id="greet-class" style="color:#64748B; margin-top:5px;">Manage your studies efficiently.</p>
+        <main class="content">
+            <div class="hero fade-in">
+                <h1 id="page-title">Hi!</h1>
+                <p id="page-subtitle">Here is your plan.</p>
             </div>
-            <div id="task-list"></div>
+            <div id="task-list" class="fade-in"></div>
         </main>
 
-        <button id="fab" onclick="openModal()" style="position:fixed; bottom:30px; right:25px; width:65px; height:65px; border-radius:20px; background:#F59E0B; color:white; font-size:2.5rem; border:none; box-shadow:0 8px 25px rgba(245,158,11,0.4); cursor:pointer; z-index:900;">+</button>
-    </div>
+        <button id="fab" onclick="openTaskModal()">+</button>
+    </section>
+
+    <section id="view-about" class="page-view hidden">
+        <div class="about-header">
+            <button class="back-btn" onclick="navigateTo('view-main')">← Back</button>
+            <h2>About</h2>
+        </div>
+        <div class="about-body fade-in">
+            <div class="about-logo">⚡</div>
+            <h3>Study Ping</h3>
+            <div class="version-tag">Version v1.2</div>
+            
+            <div class="about-card">
+                <p>Study Ping is a student-focused productivity app designed to help school students manage exams, homework, and deadlines easily.</p>
+            </div>
+
+            <h4>Core Features</h4>
+            <ul class="feature-list">
+                <li>🚀 Fast, app-like experience</li>
+                <li>📚 Subjects match your class & stream</li>
+                <li>📝 Track exams, homework & assignments</li>
+                <li>🔒 Data stays on your device (Local)</li>
+            </ul>
+
+            <h4>What's New in v1.2</h4>
+            <ul class="feature-list new-features">
+                <li>Stream-based subjects (11 & 12)</li>
+                <li>Fixed Priority & Due Date filters</li>
+                <li>New Task Types (Exam, Homework, etc.)</li>
+                <li>Dedicated Exams Page</li>
+            </ul>
+
+            <div class="dev-credit">
+                <p>Developed by</p>
+                <strong>Arush Arora</strong>
+            </div>
+        </div>
+    </section>
 
     <div id="task-modal" class="modal-overlay hidden">
-        <div class="modal-content">
-            <h3 style="font-weight:800; margin-bottom:20px;">New Task</h3>
-            <input type="text" id="task-title" class="styled-input" placeholder="Task Title">
-            <select id="task-subject" class="styled-input">
-                <option value="" disabled selected>Subject</option>
-                <option value="Math">Math</option><option value="English">English</option>
-                <option value="Biology">Biology</option><option value="Chemistry">Chemistry</option>
-                <option value="Physics">Physics</option><option value="History">History</option>
-                <option value="Geography">Geography</option><option value="Civics">Civics</option>
-                <option value="Computer">Computer</option><option value="Finance">Finance</option>
-                <option value="Sanskrit">Sanskrit</option><option value="French">French</option>
-            </select>
+        <div class="modal-content slide-up">
+            <h3>New Task</h3>
+            <input type="text" id="task-title" class="styled-input" placeholder="Task Title (e.g. Math Homework)">
+            
+            <label class="input-label">Type</label>
             <select id="task-type" class="styled-input">
-                <option value="Homework">Homework</option><option value="Exam">Exam</option><option value="Test">Test</option>
+                <option value="Homework">Homework</option>
+                <option value="Assignment">Assignment</option>
+                <option value="Class Test">Class Test</option>
+                <option value="Exam">Exam</option>
             </select>
-            <input type="date" id="task-date" class="styled-input">
-            <select id="task-priority" class="styled-input">
-                <option value="Low">Low</option><option value="Medium">Medium</option><option value="High">High</option>
-            </select>
-            <button class="btn-setup" onclick="addTask()" style="background:#2563EB; color:white; border:none; padding:15px; border-radius:12px; width:100%; font-weight:700; cursor:pointer;">Save Task</button>
-            <button onclick="closeModal()" style="background:none; border:none; color:#64748B; width:100%; padding:10px; cursor:pointer; margin-top:10px;">Cancel</button>
+
+            <label class="input-label">Subject</label>
+            <select id="task-subject" class="styled-input">
+                </select>
+            
+            <div class="input-row">
+                <div class="input-col">
+                    <label class="input-label">Due Date</label>
+                    <input type="date" id="task-date" class="styled-input">
+                </div>
+                <div class="input-col">
+                    <label class="input-label">Priority</label>
+                    <select id="task-priority" class="styled-input">
+                        <option value="Low">Low</option>
+                        <option value="Medium" selected>Medium</option>
+                        <option value="High">High</option>
+                    </select>
+                </div>
+            </div>
+
+            <button class="btn-primary" onclick="saveTask()">Save Task</button>
+            <button class="btn-cancel" onclick="closeAllModals()">Cancel</button>
         </div>
     </div>
 
     <div id="edit-modal" class="modal-overlay hidden">
-        <div class="modal-content">
-            <h3 style="font-weight:800; margin-bottom:20px;">Update Profile</h3>
-            <input type="text" id="edit-name-input" class="styled-input" placeholder="Name">
-            <input type="text" id="edit-class-input" class="styled-input" placeholder="Class">
-            <button class="btn-setup" onclick="saveProfileEdit()" style="background:#2563EB; color:white; border:none; padding:15px; border-radius:12px; width:100%; font-weight:700; cursor:pointer;">Save Changes</button>
-            <button onclick="closeEditProfile()" style="background:none; border:none; color:#64748B; width:100%; padding:10px; cursor:pointer; margin-top:10px;">Cancel</button>
+        <div class="modal-content slide-up">
+            <h3>Edit Profile</h3>
+            <input type="text" id="edit-name" class="styled-input" placeholder="Name">
+            <select id="edit-class" class="styled-input" onchange="toggleStream('edit')"></select>
+            <div id="edit-stream-div" class="hidden">
+                <select id="edit-stream" class="styled-input">
+                    <option value="Science">Science</option>
+                    <option value="Commerce">Commerce</option>
+                    <option value="Humanities">Humanities</option>
+                </select>
+            </div>
+            <button class="btn-primary" onclick="saveProfileChanges()">Update Profile</button>
+            <button class="btn-cancel" onclick="closeAllModals()">Cancel</button>
         </div>
     </div>
 

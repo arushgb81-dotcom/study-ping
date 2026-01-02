@@ -1,130 +1,218 @@
-// --- DATA STORAGE ---
-const DB_TASKS = 'studyping_tasks_v5';
-const DB_USER = 'studyping_user_v5';
+// --- DATABASE KEYS ---
+const DB_TASKS = 'studyping_tasks_v1.2';
+const DB_USER = 'studyping_user_v1.2';
+const DB_THEME = 'studyping_theme_v1.2';
 
+// --- STATE MANAGEMENT ---
 let tasks = JSON.parse(localStorage.getItem(DB_TASKS)) || [];
 let user = JSON.parse(localStorage.getItem(DB_USER)) || null;
-let currentFilter = 'all';
+let currentFilter = 'all'; // 'all', 'priority', 'today', 'exams'
 
-// --- INITIAL LOAD SEQUENCE ---
-window.onload = () => {
-    const loader = document.getElementById('loading-screen');
-    
-    // Always show loader for 2 seconds for a professional feel
-    setTimeout(() => {
-        loader.style.opacity = '0';
-        setTimeout(() => {
-            loader.classList.add('hidden');
-            
-            // Check for profile AFTER loading
-            if (!user) {
-                document.getElementById('setup-screen').classList.remove('hidden');
-            } else {
-                launchApp();
-            }
-        }, 600);
-    }, 2000);
+// --- SUBJECT MAPPING (Update 3) ---
+const subjectsMap = {
+    Science: ["Physics", "Chemistry", "Mathematics", "Biology", "Computer Science", "English"],
+    Commerce: ["Accountancy", "Business Studies", "Economics", "Mathematics", "English"],
+    Humanities: ["History", "Political Science", "Geography", "Economics", "Psychology", "English"],
+    General: ["Mathematics", "English", "Science", "Social Science", "Computer", "Hindi"] // For Class < 11
 };
 
-// --- ACCOUNT SETUP ---
-function completeSetup() {
-    const name = document.getElementById('user-name-input').value;
-    const cls = document.getElementById('user-class-input').value;
+// --- INITIALIZATION ---
+window.onload = () => {
+    // 1. Populate Setup & Edit Class Dropdowns
+    populateClassDropdown('setup-class');
+    populateClassDropdown('edit-class');
 
-    if (name.trim() && cls.trim()) {
-        user = { name, class: cls };
-        localStorage.setItem(DB_USER, JSON.stringify(user));
-        document.getElementById('setup-screen').classList.add('hidden');
-        launchApp();
-    } else {
-        alert("Please enter your name and class!");
+    // 2. Load Theme
+    const savedTheme = localStorage.getItem(DB_THEME);
+    const toggle = document.getElementById('theme-toggle');
+    if (savedTheme === 'dark') {
+        document.body.classList.add('dark-mode');
+        if(toggle) toggle.checked = true;
     }
-}
 
-function launchApp() {
-    document.getElementById('app-shell').classList.remove('hidden');
-    updateUI();
-    renderTasks();
-}
+    // 3. Loading Animation & Routing
+    setTimeout(() => {
+        document.getElementById('loading-screen').style.opacity = '0';
+        setTimeout(() => {
+            document.getElementById('loading-screen').classList.add('hidden');
+            if (!user) navigateTo('view-setup');
+            else {
+                navigateTo('view-main');
+                setFilter('all'); // Default view
+            }
+        }, 500);
+    }, 1200);
+};
 
-function updateUI() {
-    document.getElementById('greet-name').innerText = `Hi ${user.name}! 👋`;
-    document.getElementById('greet-class').innerText = `Your Current Class: ${user.class}`;
-    document.getElementById('side-name').innerText = user.name;
-    document.getElementById('side-class').innerText = user.class;
-}
-
-// --- SIDEBAR LOGIC (Fixing the "not working" issue) ---
-function toggleSidebar() {
-    const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('sidebar-overlay');
+// --- NAVIGATION & ROUTING ---
+function navigateTo(viewId) {
+    document.querySelectorAll('.page-view').forEach(el => el.classList.add('hidden'));
+    document.getElementById(viewId).classList.remove('hidden');
     
-    if (sidebar.classList.contains('active')) {
-        sidebar.classList.remove('active');
-        overlay.style.display = 'none';
-    } else {
-        sidebar.classList.add('active');
-        overlay.style.display = 'block';
-    }
-}
+    // Close sidebar logic
+    document.getElementById('sidebar').classList.remove('active');
+    document.getElementById('sidebar-overlay').style.display = 'none';
 
-function filterView(view) {
-    currentFilter = view;
-    
-    // Update the heading on the dashboard
-    const titles = {
-        all: "Upcoming Tasks",
-        priority: "⭐ Priority Tasks",
-        today: "⏰ Due Today",
-        exams: "🚨 Exams Corner"
-    };
-    document.getElementById('greet-class').innerText = titles[view] || "Tasks";
-    
-    toggleSidebar(); // Close sidebar after clicking
-    renderTasks();
-}
-
-// --- MODAL CONTROLS ---
-function openModal() { document.getElementById('task-modal').classList.remove('hidden'); }
-function closeModal() { document.getElementById('task-modal').classList.add('hidden'); }
-function openEditProfile() { 
-    document.getElementById('edit-name-input').value = user.name;
-    document.getElementById('edit-class-input').value = user.class;
-    document.getElementById('edit-modal').classList.remove('hidden'); 
-    toggleSidebar();
-}
-function closeEditProfile() { document.getElementById('edit-modal').classList.add('hidden'); }
-
-// --- PROFILE EDIT ---
-function saveProfileEdit() {
-    const newName = document.getElementById('edit-name-input').value;
-    const newCls = document.getElementById('edit-class-input').value;
-    
-    if(newName && newCls) {
-        user.name = newName;
-        user.class = newCls;
-        localStorage.setItem(DB_USER, JSON.stringify(user));
+    if(viewId === 'view-main') {
         updateUI();
-        closeEditProfile();
     }
 }
 
-// --- TASK CRUD ---
-function addTask() {
+function toggleSidebar() {
+    const sb = document.getElementById('sidebar');
+    const ov = document.getElementById('sidebar-overlay');
+    sb.classList.toggle('active');
+    ov.style.display = sb.classList.contains('active') ? 'block' : 'none';
+}
+
+// --- FILTER LOGIC (Updates 5, 6, 7) ---
+function setFilter(type) {
+    currentFilter = type;
+    renderTasks();
+    toggleSidebar(); // Close sidebar after selection
+    
+    // Update Page Titles based on filter
+    const title = document.getElementById('page-title');
+    const sub = document.getElementById('page-subtitle');
+    
+    if (type === 'all') {
+        title.innerText = `Hi ${user.name}! 👋`;
+        sub.innerText = "Here is your study plan.";
+    } else if (type === 'priority') {
+        title.innerText = "🔥 High Priority";
+        sub.innerText = "Focus on these first.";
+    } else if (type === 'today') {
+        title.innerText = "⏰ Due Today";
+        sub.innerText = "Tasks to finish by tonight.";
+    } else if (type === 'exams') {
+        title.innerText = "📝 Exams";
+        sub.innerText = "Upcoming assessments.";
+    }
+}
+
+// --- TASK RENDERING CORE ---
+function renderTasks() {
+    const container = document.getElementById('task-list');
+    container.innerHTML = '';
+    
+    let filteredTasks = [];
+    const todayStr = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+
+    // 1. FILTERING
+    if (currentFilter === 'all') {
+        filteredTasks = tasks;
+    } else if (currentFilter === 'priority') {
+        // Update 5: Show ONLY High priority
+        filteredTasks = tasks.filter(t => t.priority === 'High');
+    } else if (currentFilter === 'today') {
+        // Update 6: Show ONLY Due Today
+        filteredTasks = tasks.filter(t => t.date === todayStr);
+    } else if (currentFilter === 'exams') {
+        // Update 7: Show ONLY Exams, Sorted by date
+        filteredTasks = tasks.filter(t => t.type === 'Exam');
+        filteredTasks.sort((a,b) => new Date(a.date) - new Date(b.date));
+    }
+
+    // 2. SORTING (Default: Date ascending)
+    if (currentFilter !== 'exams') {
+        filteredTasks.sort((a,b) => new Date(a.date) - new Date(b.date));
+    }
+
+    // 3. EMPTY STATE
+    if (filteredTasks.length === 0) {
+        let msg = "No tasks found.";
+        if (currentFilter === 'today') msg = "No tasks due today! 🎉";
+        if (currentFilter === 'priority') msg = "No high priority tasks.";
+        if (currentFilter === 'exams') msg = "No upcoming exams.";
+        
+        container.innerHTML = `<div style="text-align:center; opacity:0.6; margin-top:50px;">
+            <div style="font-size:3rem;">🍃</div>
+            <p>${msg}</p>
+        </div>`;
+        return;
+    }
+
+    // 4. GENERATE HTML
+    filteredTasks.forEach(t => {
+        // Format Date nicely
+        const dateObj = new Date(t.date);
+        const dateDisplay = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        
+        const div = document.createElement('div');
+        div.className = `task-item prio-${t.priority}`;
+        div.innerHTML = `
+            <div class="task-top">
+                <div>
+                    <div class="task-title">${t.title}</div>
+                    <div class="task-sub">
+                        <span>${t.subject}</span>
+                    </div>
+                </div>
+                <button onclick="deleteTask(${t.id})" style="background:none; border:none; color:#ef4444; font-size:1.1rem; opacity:0.6;">🗑️</button>
+            </div>
+            <div class="task-footer">
+                <span class="tag type-${t.type === 'Class Test' ? 'Test' : t.type}">${t.type}</span>
+                <div class="date-badge">📅 ${dateDisplay}</div>
+            </div>
+        `;
+        container.appendChild(div);
+    });
+}
+
+// --- ADD TASK LOGIC (Updates 2, 3, 4) ---
+function openTaskModal() {
+    if(!user) return alert("Please complete setup first.");
+
+    // Update 3: Populate Subjects dynamically
+    const subSelect = document.getElementById('task-subject');
+    subSelect.innerHTML = '';
+    
+    // Determine subject list based on user details
+    let list = subjectsMap.General;
+    if (user.class >= 11) {
+        list = subjectsMap[user.stream] || subjectsMap.General;
+    }
+
+    list.forEach(s => {
+        let opt = document.createElement('option');
+        opt.value = s; opt.innerText = s;
+        subSelect.appendChild(opt);
+    });
+    
+    // Set default date to today
+    document.getElementById('task-date').valueAsDate = new Date();
+    
+    document.getElementById('task-modal').classList.remove('hidden');
+}
+
+function saveTask() {
     const title = document.getElementById('task-title').value;
-    const subject = document.getElementById('task-subject').value;
-    const type = document.getElementById('task-type').value;
+    const type = document.getElementById('task-type').value; // Update 2
+    const sub = document.getElementById('task-subject').value;
     const date = document.getElementById('task-date').value;
-    const priority = document.getElementById('task-priority').value;
+    const prio = document.getElementById('task-priority').value; // Update 4
 
-    if (!title || !subject || !date) return alert("Fill in the Title, Subject, and Date!");
+    if(!title || !date) return alert("Title and Date are required!");
 
-    tasks.push({ id: Date.now(), title, subject, type, date, priority, completed: false });
+    const newTask = { 
+        id: Date.now(), 
+        title, 
+        type, 
+        sub: sub || 'General', // Fallback
+        subject: sub || 'General', 
+        date, 
+        priority: prio, 
+        completed: false 
+    };
+    
+    tasks.push(newTask);
     localStorage.setItem(DB_TASKS, JSON.stringify(tasks));
     
-    // Reset form
+    // Reset and Close
     document.getElementById('task-title').value = '';
-    closeModal();
+    closeAllModals();
+    
+    // Refresh view
     renderTasks();
 }
 
@@ -136,47 +224,98 @@ function deleteTask(id) {
     }
 }
 
-function toggleStatus(id) {
-    tasks = tasks.map(t => t.id === id ? {...t, completed: !t.completed} : t);
-    localStorage.setItem(DB_TASKS, JSON.stringify(tasks));
-    renderTasks();
+// --- USER SETUP & PROFILE ---
+function populateClassDropdown(id) {
+    const sel = document.getElementById(id);
+    if(!sel) return;
+    sel.innerHTML = '<option value="" disabled selected>Select Class</option>';
+    for(let i=1; i<=12; i++) {
+        let opt = document.createElement('option');
+        opt.value = i;
+        opt.innerText = `Class ${i}`;
+        sel.appendChild(opt);
+    }
 }
 
-// --- RENDER ENGINE ---
-function renderTasks() {
-    const container = document.getElementById('task-list');
-    container.innerHTML = '';
+function toggleStream(mode) {
+    const clsId = mode === 'setup' ? 'setup-class' : 'edit-class';
+    const divId = mode === 'setup' ? 'setup-stream-div' : 'edit-stream-div';
+    const val = document.getElementById(clsId).value;
+    
+    const div = document.getElementById(divId);
+    if(val == "11" || val == "12") div.classList.remove('hidden');
+    else div.classList.add('hidden');
+}
 
-    let filtered = [...tasks].sort((a,b) => new Date(a.date) - new Date(b.date));
+function finishSetup() {
+    const name = document.getElementById('setup-name').value;
+    const cls = document.getElementById('setup-class').value;
+    const streamVal = document.getElementById('setup-stream').value;
 
-    // Filters
-    if (currentFilter === 'priority') filtered = filtered.filter(t => t.priority === 'High');
-    if (currentFilter === 'exams') filtered = filtered.filter(t => t.type === 'Exam' || t.type === 'Test');
-    if (currentFilter === 'today') {
-        const today = new Date().toISOString().split('T')[0];
-        filtered = filtered.filter(t => t.date === today);
+    if(!name || !cls) return alert("Please enter Name and Class");
+    // Stream is mandatory only for 11/12
+    let finalStream = 'General';
+    if(cls == "11" || cls == "12") {
+        if(!streamVal) return alert("Please select a stream");
+        finalStream = streamVal;
     }
 
-    if (filtered.length === 0) {
-        container.innerHTML = `<p style="text-align:center; padding:40px; opacity:0.5;">No tasks found.</p>`;
-        return;
-    }
+    user = { name, class: cls, stream: finalStream };
+    localStorage.setItem(DB_USER, JSON.stringify(user));
+    
+    navigateTo('view-main');
+    setFilter('all');
+}
 
-    filtered.forEach(t => {
-        const div = document.createElement('div');
-        div.className = 'task-item'; // Styles from CSS
-        div.style = `background:white; padding:15px; border-radius:15px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; border-left:6px solid #2563EB; box-shadow:0 4px 6px rgba(0,0,0,0.05); ${t.completed ? 'opacity:0.5;' : ''}`;
-        
-        div.innerHTML = `
-            <div onclick="toggleStatus(${t.id})" style="flex-grow:1; cursor:pointer;">
-                <strong style="${t.completed ? 'text-decoration:line-through;' : ''}">${t.title}</strong>
-                <div style="font-size:0.8rem; color:#64748B;">${t.subject} • ${t.date}</div>
-            </div>
-            <div style="display:flex; align-items:center; gap:10px;">
-                <span style="font-size:1.2rem;">${t.completed ? '✅' : '⭕'}</span>
-                <button onclick="deleteTask(${t.id})" style="background:none; border:none; color:#EF4444; cursor:pointer;">🗑️</button>
-            </div>
-        `;
-        container.appendChild(div);
-    });
+function openEditModal() {
+    document.getElementById('edit-name').value = user.name;
+    document.getElementById('edit-class').value = user.class;
+    toggleStream('edit'); 
+    if(user.class >= 11) document.getElementById('edit-stream').value = user.stream;
+    
+    document.getElementById('edit-modal').classList.remove('hidden');
+    toggleSidebar();
+}
+
+function saveProfileChanges() {
+    const name = document.getElementById('edit-name').value;
+    const cls = document.getElementById('edit-class').value;
+    const streamVal = document.getElementById('edit-stream').value;
+
+    if(!name || !cls) return alert("Fields cannot be empty");
+
+    let finalStream = 'General';
+    if(cls == "11" || cls == "12") finalStream = streamVal;
+
+    user.name = name;
+    user.class = cls;
+    user.stream = finalStream;
+    
+    localStorage.setItem(DB_USER, JSON.stringify(user));
+    closeAllModals();
+    updateUI();
+}
+
+function updateUI() {
+    if(!user) return;
+    document.getElementById('greet-name').innerText = `Hi ${user.name}!`; // In case header exists
+    document.getElementById('side-name').innerText = user.name;
+    let details = `Class ${user.class}`;
+    if(user.stream !== 'General') details += ` • ${user.stream}`;
+    document.getElementById('side-class').innerText = details;
+}
+
+// --- UTILITIES ---
+function closeAllModals() {
+    document.querySelectorAll('.modal-overlay').forEach(m => m.classList.add('hidden'));
+}
+
+function toggleTheme(checkbox) {
+    if(checkbox.checked) {
+        document.body.classList.add('dark-mode');
+        localStorage.setItem(DB_THEME, 'dark');
+    } else {
+        document.body.classList.remove('dark-mode');
+        localStorage.setItem(DB_THEME, 'light');
+    }
 }
