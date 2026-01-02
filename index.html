@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Study Ping</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="loading-screen">
+        <div class="loader-content">
+            <div class="app-logo-large">⚡</div>
+            <h1 class="logo-text">Study Ping</h1>
+            <div class="spinner"></div>
+        </div>
+    </div>
+
+    <div id="setup-screen" class="screen-overlay hidden">
+        <div class="setup-card">
+            <div class="setup-icon">👤</div>
+            <h2>Create Profile</h2>
+            <p>Welcome! Please set up your local student account to continue.</p>
+            <div class="input-group">
+                <input type="text" id="user-name-input" placeholder="Full Name" autocomplete="off">
+                <input type="text" id="user-class-input" placeholder="Class / Year" autocomplete="off">
+            </div>
+            <button class="btn-setup" onclick="completeSetup()">Get Started</button>
+        </div>
+    </div>
+
+    <div id="app-shell" class="hidden">
+        <header>
+            <button id="menu-btn" class="menu-trigger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <div class="brand">
+                <span class="logo-bolt">⚡</span>
+                <span class="brand-name">Study Ping</span>
+            </div>
+        </header>
+
+        <nav id="sidebar">
+            <div class="sidebar-content">
+                <div class="nav-section">
+                    <h3>Navigation</h3>
+                    <ul class="nav-menu">
+                        <li onclick="filterView('all')" class="active">🏠 Dashboard</li>
+                        <li onclick="filterView('priority')">⭐ Priority</li>
+                        <li onclick="filterView('today')">⏰ Due Today</li>
+                        <li onclick="filterView('exams')">🚨 Exams Corner</li>
+                    </ul>
+                </div>
+                
+                <div class="sidebar-footer">
+                    <div class="profile-box">
+                        <div class="profile-info">
+                            <strong id="side-name">Student</strong>
+                            <span id="side-class">Class --</span>
+                        </div>
+                        <button class="edit-profile-btn" onclick="openEditProfile()">Edit</button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+        <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+        <main class="main-container">
+            <div class="hero-section">
+                <h1 id="greet-name">Hi! 👋</h1>
+                <p id="greet-class">Manage your studies efficiently.</p>
+            </div>
+
+            <div class="task-section">
+                <h2 id="view-label">Upcoming Tasks</h2>
+                <div id="task-list">
+                    </div>
+            </div>
+        </main>
+
+        <button id="fab" onclick="openModal()">+</button>
+    </div>
+
+    <div id="task-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>New Task</h3>
+                <button class="close-x" onclick="closeModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="task-title" placeholder="Task Title" class="styled-input">
+                
+                <div class="input-row">
+                    <select id="task-subject" class="styled-select">
+                        <option value="" disabled selected>Subject</option>
+                        <option value="Math">Math</option><option value="English">English</option>
+                        <option value="Biology">Biology</option><option value="Chemistry">Chemistry</option>
+                        <option value="Physics">Physics</option><option value="History">History</option>
+                        <option value="Geography">Geography</option><option value="Civics">Civics</option>
+                        <option value="Computer">Computer</option><option value="Finance">Finance</option>
+                        <option value="Sanskrit">Sanskrit</option><option value="French">French</option>
+                    </select>
+                    <select id="task-type" class="styled-select">
+                        <option value="Homework">Homework</option>
+                        <option value="Exam">Exam</option>
+                        <option value="Test">Test</option>
+                    </select>
+                </div>
+
+                <div class="input-row">
+                    <input type="date" id="task-date" class="styled-input">
+                    <select id="task-priority" class="styled-select">
+                        <option value="Low">Low</option>
+                        <option value="Medium">Medium</option>
+                        <option value="High">High</option>
+                    </select>
+                </div>
+                
+                <button class="btn-add-task" onclick="addTask()">Save Task</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="edit-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h3>Update Profile</h3>
+            <input type="text" id="edit-name-input" class="styled-input" placeholder="Name">
+            <input type="text" id="edit-class-input" class="styled-input" placeholder="Class">
+            <button class="btn-add-task" onclick="saveProfileEdit()">Save Changes</button>
+            <button class="btn-cancel" onclick="closeEditProfile()">Cancel</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
