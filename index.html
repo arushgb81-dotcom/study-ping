@@ -2,18 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-5QTB5W7HW2"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-5QTB5W7HW2');
-</script>
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Study Ping v1.2</title>
+    <title>Study Ping v1.3</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
@@ -34,11 +24,9 @@
                 <h2>Create Profile</h2>
                 <p>Let's set up your student profile.</p>
                 <input type="text" id="setup-name" class="styled-input" placeholder="Full Name">
-                
                 <select id="setup-class" class="styled-input" onchange="toggleStream('setup')">
                     <option value="" disabled selected>Select Class</option>
-                    </select>
-                
+                </select>
                 <div id="setup-stream-div" class="hidden">
                     <select id="setup-stream" class="styled-input">
                         <option value="" disabled selected>Select Stream</option>
@@ -57,7 +45,7 @@
             <button class="menu-btn" onclick="toggleSidebar()">
                 <div class="line"></div><div class="line"></div><div class="line"></div>
             </button>
-            <div class="brand">Study Ping <span class="version-badge">v1.2</span></div>
+            <div class="brand">Study Ping <span class="version-badge">v1.3</span></div>
         </header>
 
         <nav id="sidebar">
@@ -65,7 +53,15 @@
                 <li onclick="setFilter('all')">🏠 Dashboard</li>
                 <li onclick="setFilter('priority')">🔥 High Priority</li>
                 <li onclick="setFilter('today')">⏰ Due Today</li>
-                <li onclick="setFilter('exams')">📝 Exams</li> <li onclick="navigateTo('view-about')">ℹ️ About App</li> <li class="toggle-li">
+                <li onclick="setFilter('exams')">📝 Exams</li>
+                <li onclick="navigateTo('view-streak')">⚡ My Streak</li>
+                <li onclick="navigateTo('view-about')">ℹ️ About App</li>
+                <li>
+                    <a href="https://forms.gle/z73sisG5NsvvXJiH6" target="_blank" class="sidebar-link">
+                        💬 Send Feedback ↗
+                    </a>
+                </li>
+                <li class="toggle-li">
                     <span>🌙 Dark Mode</span>
                     <label class="switch">
                         <input type="checkbox" id="theme-toggle" onchange="toggleTheme(this)">
@@ -89,7 +85,10 @@
         <main class="content">
             <div class="hero fade-in">
                 <h1 id="page-title">Hi!</h1>
-                <p id="page-subtitle">Here is your plan.</p>
+                <div class="hero-row">
+                    <p id="page-subtitle">Here is your plan.</p>
+                    <div id="dashboard-streak" class="streak-badge hidden" onclick="navigateTo('view-streak')">🔥 0 days</div>
+                </div>
             </div>
             <div id="task-list" class="fade-in"></div>
         </main>
@@ -97,39 +96,94 @@
         <button id="fab" onclick="openTaskModal()">+</button>
     </section>
 
-    <section id="view-about" class="page-view hidden">
-        <div class="about-header">
+    <section id="view-streak" class="page-view hidden no-padding">
+        <div class="sub-header">
+            <button class="back-btn" onclick="navigateTo('view-main')">← Back</button>
+            <h2>My Streak</h2>
+        </div>
+        
+        <div class="streak-container fade-in">
+            <div class="streak-ring">
+                <div class="streak-fire">🔥</div>
+            </div>
+            
+            <h1 id="streak-count-large">0</h1>
+            <h3>Day Streak</h3>
+            
+            <p id="streak-msg">Keep the fire burning!</p>
+
+            <div class="streak-progress-box">
+                <div class="progress-labels">
+                    <span id="current-milestone">0</span>
+                    <span id="next-milestone">Next Goal: 3</span>
+                </div>
+                <div class="progress-track">
+                    <div id="streak-bar" class="progress-fill" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <button class="btn-primary share-btn" onclick="shareStreak()">
+                📤 Share Streak
+            </button>
+        </div>
+    </section>
+
+    <section id="view-about" class="page-view hidden no-padding">
+        <div class="sub-header">
             <button class="back-btn" onclick="navigateTo('view-main')">← Back</button>
             <h2>About</h2>
         </div>
+        
         <div class="about-body fade-in">
             <div class="about-logo">⚡</div>
             <h3>Study Ping</h3>
-            <div class="version-tag">Version v1.2</div>
+            <div class="version-tag">Version v1.3</div>
             
-            <div class="about-card">
-                <p>Study Ping is a student-focused productivity app designed to help school students manage exams, homework, and deadlines easily.</p>
+            <h4 style="text-align: center; margin-bottom: 20px;">⭐ Study Ping — Key Features</h4>
+            
+            <div class="feature-block">
+                <strong>📋 Smart Task Management</strong>
+                <p>Add homework, exams, class tests, and assignments in one place with due dates and priorities.</p>
             </div>
 
-            <h4>Core Features</h4>
-            <ul class="feature-list">
-                <li>🚀 Fast, app-like experience</li>
-                <li>📚 Subjects match your class & stream</li>
-                <li>📝 Track exams, homework & assignments</li>
-                <li>🔒 Data stays on your device (Local)</li>
-            </ul>
+            <div class="feature-block">
+                <strong>🎓 Class & Stream-Based Subjects</strong>
+                <p>Subjects automatically adapt based on your class and stream (Science, Commerce, or Humanities for Classes 11 & 12).</p>
+            </div>
 
-            <h4>What's New in v1.2</h4>
-            <ul class="feature-list new-features">
-                <li>Stream-based subjects (11 & 12)</li>
-                <li>Fixed Priority & Due Date filters</li>
-                <li>New Task Types (Exam, Homework, etc.)</li>
-                <li>Dedicated Exams Page</li>
-            </ul>
+            <div class="feature-block">
+                <strong>⏰ Priority & Due-Date Views</strong>
+                <p>Quickly see high-priority tasks and what’s due today, so nothing important is missed.</p>
+            </div>
+
+            <div class="feature-block">
+                <strong>🧠 Exams Corner</strong>
+                <p>A dedicated exams page that shows all upcoming exams, sorted by nearest date.</p>
+            </div>
+
+            <div class="feature-block">
+                <strong>🔥 Study Streaks</strong>
+                <p>Stay consistent by completing tasks on time and build a daily study streak.</p>
+            </div>
+
+            <div class="feature-block">
+                <strong>✏️ Editable Tasks</strong>
+                <p>Tap on any task to view details, edit it, or mark it as completed.</p>
+            </div>
+
+            <div class="feature-block">
+                <strong>💾 Works Offline & Keeps Data Private</strong>
+                <p>Your data is saved on your device and works even without internet.</p>
+            </div>
+
+            <div class="feature-block">
+                <strong>📱 App-Like Experience</strong>
+                <p>Fast, mobile-friendly design that feels like a real app when added to your home screen.</p>
+            </div>
 
             <div class="dev-credit">
                 <p>Developed by</p>
-                <strong>Arush Arora</strong>
+                <strong>Arush Arora & Aksh Choudhary</strong>
             </div>
         </div>
     </section>
@@ -137,8 +191,7 @@
     <div id="task-modal" class="modal-overlay hidden">
         <div class="modal-content slide-up">
             <h3>New Task</h3>
-            <input type="text" id="task-title" class="styled-input" placeholder="Task Title (e.g. Math Homework)">
-            
+            <input type="text" id="task-title" class="styled-input" placeholder="Task Title">
             <label class="input-label">Type</label>
             <select id="task-type" class="styled-input">
                 <option value="Homework">Homework</option>
@@ -146,11 +199,8 @@
                 <option value="Class Test">Class Test</option>
                 <option value="Exam">Exam</option>
             </select>
-
             <label class="input-label">Subject</label>
-            <select id="task-subject" class="styled-input">
-                </select>
-            
+            <select id="task-subject" class="styled-input"></select>
             <div class="input-row">
                 <div class="input-col">
                     <label class="input-label">Due Date</label>
@@ -165,9 +215,48 @@
                     </select>
                 </div>
             </div>
-
             <button class="btn-primary" onclick="saveTask()">Save Task</button>
             <button class="btn-cancel" onclick="closeAllModals()">Cancel</button>
+        </div>
+    </div>
+
+    <div id="detail-modal" class="modal-overlay hidden">
+        <div class="modal-content slide-up">
+            <div class="modal-header-row">
+                <h3>Task Details</h3>
+                <button class="close-icon" onclick="closeAllModals()">✕</button>
+            </div>
+            <input type="hidden" id="detail-id">
+            <label class="input-label">Title</label>
+            <input type="text" id="detail-title" class="styled-input">
+            <label class="input-label">Type & Subject</label>
+            <div class="input-row">
+                <select id="detail-type" class="styled-input">
+                    <option value="Homework">Homework</option>
+                    <option value="Assignment">Assignment</option>
+                    <option value="Class Test">Class Test</option>
+                    <option value="Exam">Exam</option>
+                </select>
+                <select id="detail-subject" class="styled-input"></select>
+            </div>
+            <label class="input-label">Due Date & Priority</label>
+            <div class="input-row">
+                <input type="date" id="detail-date" class="styled-input">
+                <select id="detail-priority" class="styled-input">
+                    <option value="Low">Low</option>
+                    <option value="Medium">Medium</option>
+                    <option value="High">High</option>
+                </select>
+            </div>
+            <div class="completion-box">
+                <label class="switch">
+                    <input type="checkbox" id="detail-complete-toggle" onchange="toggleTaskCompletion()">
+                    <span class="slider round"></span>
+                </label>
+                <span id="completion-text">Mark as Completed</span>
+            </div>
+            <button class="btn-primary" onclick="updateTaskDetails()">Save Changes</button>
+            <button class="btn-delete" onclick="deleteTaskFromModal()">Delete Task</button>
         </div>
     </div>
 
