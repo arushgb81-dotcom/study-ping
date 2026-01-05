@@ -1,25 +1,56 @@
-// --- DATABASE KEYS ---
-const DB_TASKS = 'studyping_tasks_v1.3';
-const DB_USER = 'studyping_user_v1.3';
-const DB_THEME = 'studyping_theme_v1.3';
-const DB_STREAK = 'studyping_streak_v1.3';
+// --- DATABASE KEYS (MIGRATED TO V1.4) ---
+const DB_TASKS = 'studyping_tasks_v1.4';
+const DB_USER = 'studyping_user_v1.4';
+const DB_THEME = 'studyping_theme_v1.4';
+const DB_STREAK = 'studyping_streak_v1.4';
+const DB_CHALLENGE = 'studyping_challenge_last_date';
 
 // --- STATE MANAGEMENT ---
-let tasks = JSON.parse(localStorage.getItem(DB_TASKS)) || [];
-let user = JSON.parse(localStorage.getItem(DB_USER)) || null;
-let streakData = JSON.parse(localStorage.getItem(DB_STREAK)) || { count: 0, lastActiveDate: null };
+let tasks = [];
+let user = null;
+let streakData = { count: 0, lastActiveDate: null };
 let currentFilter = 'all';
 
-// --- SUBJECT MAP ---
-const subjectsMap = {
-    Science: ["Physics", "Chemistry", "Mathematics", "Biology", "Computer Science", "English"],
-    Commerce: ["Accountancy", "Business Studies", "Economics", "Mathematics", "English"],
-    Humanities: ["History", "Political Science", "Geography", "Economics", "Psychology", "English"],
-    General: ["Mathematics", "English", "Science", "Social Science", "Computer", "Hindi"]
+// --- QUESTION BANK (10-Second Challenge) ---
+const questionBank = {
+    "Physics": [
+        { q: "Unit of Force?", o: ["Newton", "Joule", "Watt", "Pascal"], a: 0 },
+        { q: "Value of g?", o: ["9.8 m/s²", "10 m/s", "9.8 km/s", "8.9 m/s²"], a: 0 },
+        { q: "E = mc² is by?", o: ["Newton", "Einstein", "Bohr", "Tesla"], a: 1 },
+        { q: "Light particle?", o: ["Photon", "Electron", "Proton", "Neutron"], a: 0 },
+        { q: "Ohm's Law?", o: ["V=IR", "P=VI", "F=ma", "E=hf"], a: 0 }
+    ],
+    "Mathematics": [
+        { q: "Derivative of x²?", o: ["2x", "x", "2", "x²"], a: 0 },
+        { q: "Sin(90°)?", o: ["0", "1", "-1", "0.5"], a: 1 },
+        { q: "Value of Pi?", o: ["3.14", "2.14", "3.41", "3.12"], a: 0 },
+        { q: "Slope of y=3x+1?", o: ["3", "1", "x", "0"], a: 0 },
+        { q: "Root of 144?", o: ["10", "11", "12", "13"], a: 2 }
+    ],
+    "Chemistry": [
+        { q: "Symbol for Gold?", o: ["Ag", "Au", "Fe", "Cu"], a: 1 },
+        { q: "PH of water?", o: ["7", "1", "14", "5"], a: 0 },
+        { q: "Atomic number of C?", o: ["6", "12", "8", "14"], a: 0 },
+        { q: "H2SO4 is?", o: ["Acid", "Base", "Salt", "Gas"], a: 0 },
+        { q: "Gas in balloons?", o: ["Helium", "Oxygen", "Nitrogen", "Argon"], a: 0 }
+    ],
+    "General": [
+        { q: "Capital of India?", o: ["Mumbai", "Delhi", "Kolkata", "Chennai"], a: 1 },
+        { q: "Photosynthesis uses?", o: ["Sunlight", "Moonlight", "Fire", "Heat"], a: 0 },
+        { q: "Hardest substance?", o: ["Gold", "Iron", "Diamond", "Silver"], a: 2 },
+        { q: "Human bones count?", o: ["206", "208", "300", "105"], a: 0 },
+        { q: "Freezing point (C)?", o: ["0", "100", "-10", "32"], a: 0 }
+    ]
 };
 
 // --- INITIALIZATION ---
 window.onload = () => {
+    migrateData(); // Move v1.3 data to v1.4 if needed
+    
+    tasks = JSON.parse(localStorage.getItem(DB_TASKS)) || [];
+    user = JSON.parse(localStorage.getItem(DB_USER)) || null;
+    streakData = JSON.parse(localStorage.getItem(DB_STREAK)) || { count: 0, lastActiveDate: null };
+
     populateClassDropdown('setup-class');
     populateClassDropdown('edit-class');
 
@@ -32,6 +63,7 @@ window.onload = () => {
     }
 
     checkStreakValidity();
+    checkNotifications(); // Part 3
 
     // Loading Screen
     setTimeout(() => {
@@ -43,11 +75,54 @@ window.onload = () => {
                 navigateTo('view-main');
                 setFilter('all');
                 updateUI();
-                renderTasks(); // FIX 1: Explicit render on load
+                renderTasks();
             }
         }, 500);
     }, 1200);
 };
+
+// --- DATA MIGRATION V1.3 -> V1.4 ---
+function migrateData() {
+    if (!localStorage.getItem(DB_USER) && localStorage.getItem('studyping_user_v1.3')) {
+        localStorage.setItem(DB_USER, localStorage.getItem('studyping_user_v1.3'));
+        localStorage.setItem(DB_TASKS, localStorage.getItem('studyping_tasks_v1.3'));
+        localStorage.setItem(DB_STREAK, localStorage.getItem('studyping_streak_v1.3'));
+        localStorage.setItem(DB_THEME, localStorage.getItem('studyping_theme_v1.3'));
+    }
+}
+
+// --- PART 3: NOTIFICATIONS ---
+function checkNotifications() {
+    if (!("Notification" in window)) return;
+    
+    // Check permission on load
+    if (Notification.permission === "default") {
+        Notification.requestPermission();
+    }
+    
+    if (Notification.permission === "granted" && user) {
+        const todayStr = new Date().toISOString().split('T')[0];
+        const tasksToday = tasks.filter(t => t.date === todayStr && !t.completed).length;
+        
+        // Find exams tomorrow
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const tomStr = tomorrow.toISOString().split('T')[0];
+        const examsTom = tasks.filter(t => t.type === 'Exam' && t.date === tomStr).length;
+
+        if (tasksToday > 0 || examsTom > 0) {
+            new Notification("Study Ping Update ⚡", {
+                body: `You have ${tasksToday} tasks due today and ${examsTom} exams tomorrow. Stay focused!`,
+                icon: 'icon-192.png'
+            });
+        }
+    }
+}
+
+// --- PART 5: SEARCH FUNCTION ---
+function filterTasksBySearch() {
+    renderTasks();
+}
 
 // --- NAVIGATION ---
 function navigateTo(viewId) {
@@ -58,7 +133,7 @@ function navigateTo(viewId) {
     document.getElementById('sidebar-overlay').style.display = 'none';
 
     if(viewId === 'view-main') {
-        renderTasks(); // FIX 1: Render when returning to dashboard
+        renderTasks();
         updateUI();
     }
     if(viewId === 'view-streak') renderStreakPage();
@@ -71,90 +146,239 @@ function toggleSidebar() {
     ov.style.display = sb.classList.contains('active') ? 'block' : 'none';
 }
 
-// --- STREAK LOGIC ---
+// --- STREAK LOGIC & CONFETTI ---
 function checkStreakValidity() {
     if (!streakData.lastActiveDate) return;
-    const today = new Date();
-    today.setHours(0,0,0,0);
-    const lastActive = new Date(streakData.lastActiveDate);
-    lastActive.setHours(0,0,0,0);
-    
-    const diffTime = Math.abs(today - lastActive);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
+    const today = new Date(); today.setHours(0,0,0,0);
+    const lastActive = new Date(streakData.lastActiveDate); lastActive.setHours(0,0,0,0);
+    const diffDays = Math.ceil(Math.abs(today - lastActive) / (1000 * 60 * 60 * 24));
     if (diffDays > 1) {
         streakData.count = 0;
         localStorage.setItem(DB_STREAK, JSON.stringify(streakData));
     }
 }
 
-function updateStreakOnCompletion(taskDate) {
+function incrementStreak() {
     const todayStr = new Date().toISOString().split('T')[0];
-    const todayDate = new Date();
-    todayDate.setHours(0,0,0,0);
-    const tDate = new Date(taskDate);
-    tDate.setHours(0,0,0,0);
+    if (streakData.lastActiveDate !== todayStr) {
+        streakData.count++;
+        streakData.lastActiveDate = todayStr;
+        localStorage.setItem(DB_STREAK, JSON.stringify(streakData));
+        fireConfetti();
+        updateUI();
+        return true; // Streak increased
+    }
+    return false; // Already increased today
+}
 
-    if (todayDate <= tDate) {
-        if (streakData.lastActiveDate !== todayStr) {
-            streakData.count++;
-            streakData.lastActiveDate = todayStr;
-            localStorage.setItem(DB_STREAK, JSON.stringify(streakData));
-            alert("🔥 Streak Increased! Great job!");
-            updateUI(); // FIX 2: Update badge immediately
-        }
+function updateStreakOnCompletion(taskDate) {
+    // FIX: We removed the date comparison check. 
+    // Completing ANY task (even overdue ones) should count as activity for 'today'.
+    
+    if(incrementStreak()) {
+        // We use a small timeout so the Confetti has time to start before the Alert pauses the screen
+        setTimeout(() => {
+            alert("🔥 Streak +1! Keep going!");
+        }, 100);
     }
 }
 
-// STREAK PAGE LOGIC (UPDATED)
-function renderStreakPage() {
-    const count = streakData.count;
-    document.getElementById('streak-count-large').innerText = count;
-    document.getElementById('current-milestone').innerText = `${count} Days`;
+function fireConfetti() {
+    const container = document.getElementById('confetti-container');
+    container.innerHTML = '';
+    const colors = ['#2563EB', '#F59E0B', '#EF4444', '#10B981'];
     
-    // Milestones: 3, 7, 14, 30, 50, 100
-    const milestones = [3, 7, 14, 30, 50, 100];
-    let nextGoal = milestones.find(m => m > count) || (count + 10);
-    
-    document.getElementById('next-milestone').innerText = `Next Goal: ${nextGoal}`;
-    
-    // Calculate progress percentage
-    let prevGoal = 0; // simplistic progress from 0
-    let percentage = (count / nextGoal) * 100;
-    if(percentage > 100) percentage = 100;
-    
-    document.getElementById('streak-bar').style.width = `${percentage}%`;
-
-    // Messages
-    const msgEl = document.getElementById('streak-msg');
-    if(count === 0) msgEl.innerText = "Start a task today to light the fire!";
-    else if(count < 3) msgEl.innerText = "You're warming up! Keep going.";
-    else if(count < 7) msgEl.innerText = "You're on fire! Almost a week!";
-    else msgEl.innerText = "Unstoppable! Incredible consistency.";
+    for (let i = 0; i < 30; i++) {
+        const el = document.createElement('div');
+        el.className = 'confetti';
+        el.style.left = Math.random() * 100 + 'vw';
+        el.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        el.style.animationDuration = (Math.random() * 2 + 2) + 's';
+        container.appendChild(el);
+    }
+    setTimeout(() => container.innerHTML = '', 4000);
 }
 
-function shareStreak() {
-    const text = `I'm on a ${streakData.count}-day study streak using Study Ping 📚🔥`;
-    if (navigator.share) {
-        navigator.share({ title: 'Study Ping Streak', text: text, url: window.location.href }).catch(console.error);
+// --- PART 6: 10-SECOND CHALLENGE LOGIC ---
+let challengeState = { score: 0, qIndex: 0, questions: [], timer: null };
+
+function initChallenge() {
+    toggleSidebar();
+    const todayStr = new Date().toISOString().split('T')[0];
+    const lastPlayed = localStorage.getItem(DB_CHALLENGE);
+
+    // Reset View
+    document.getElementById('challenge-subject-select').classList.add('hidden');
+    document.getElementById('challenge-blocked').classList.add('hidden');
+
+    if (lastPlayed === todayStr) {
+        document.getElementById('challenge-blocked').classList.remove('hidden');
     } else {
-        navigator.clipboard.writeText(text);
-        alert("Text copied to clipboard!");
+        document.getElementById('challenge-subject-select').classList.remove('hidden');
+        renderSubjectButtons();
+    }
+    navigateTo('view-challenge-intro');
+}
+
+function renderSubjectButtons() {
+    const container = document.getElementById('subject-buttons');
+    container.innerHTML = '';
+    const subjects = (user.class >= 11 && user.stream !== 'General') 
+        ? [user.stream, "General"] 
+        : ["General", "Mathematics", "Science"]; // Defaults
+
+    // Flatten logic for simple mapping
+    let availableKeys = [];
+    if (user.stream === 'Science') availableKeys = ['Physics', 'Chemistry', 'Mathematics'];
+    else if (user.stream === 'Commerce') availableKeys = ['Mathematics', 'General']; 
+    else availableKeys = ['General', 'Mathematics'];
+
+    // De-duplicate
+    availableKeys = [...new Set(availableKeys)];
+
+    availableKeys.forEach(sub => {
+        if(questionBank[sub]) {
+            const btn = document.createElement('button');
+            btn.className = 'subject-btn';
+            btn.innerText = sub;
+            btn.onclick = () => startQuiz(sub);
+            container.appendChild(btn);
+        }
+    });
+}
+
+function startQuiz(subject) {
+    // 1. Setup Questions
+    const allQ = questionBank[subject];
+    // Shuffle and pick 5
+    challengeState.questions = allQ.sort(() => 0.5 - Math.random()).slice(0, 5);
+    challengeState.score = 0;
+    challengeState.qIndex = 0;
+    
+    navigateTo('view-quiz');
+    loadQuestion();
+}
+
+function loadQuestion() {
+    if (challengeState.qIndex >= 5) {
+        endQuiz();
+        return;
+    }
+    
+    const qData = challengeState.questions[challengeState.qIndex];
+    document.getElementById('quiz-q-num').innerText = `Q${challengeState.qIndex + 1}/5`;
+    document.getElementById('quiz-question').innerText = qData.q;
+    
+    const optsDiv = document.getElementById('quiz-options');
+    optsDiv.innerHTML = '';
+    
+    qData.o.forEach((opt, idx) => {
+        const btn = document.createElement('button');
+        btn.className = 'option-btn';
+        btn.innerText = opt;
+        btn.onclick = () => selectAnswer(btn, idx, qData.a);
+        optsDiv.appendChild(btn);
+    });
+
+    // Timer Reset
+    clearInterval(challengeState.timer);
+    let time = 10;
+    document.getElementById('quiz-timer').innerText = `10s`;
+    document.getElementById('timer-fill').style.transition = 'none';
+    document.getElementById('timer-fill').style.width = '100%';
+    
+    setTimeout(() => {
+        document.getElementById('timer-fill').style.transition = 'width 10s linear';
+        document.getElementById('timer-fill').style.width = '0%';
+    }, 100);
+
+    challengeState.timer = setInterval(() => {
+        time--;
+        document.getElementById('quiz-timer').innerText = `${time}s`;
+        if (time <= 0) {
+            clearInterval(challengeState.timer);
+            // Time up - treat as wrong
+            highlightAnswer(null, qData.a);
+            setTimeout(() => {
+                challengeState.qIndex++;
+                loadQuestion();
+            }, 1000);
+        }
+    }, 1000);
+}
+
+function selectAnswer(btn, selectedIdx, correctIdx) {
+    clearInterval(challengeState.timer);
+    
+    const allBtns = document.querySelectorAll('.option-btn');
+    allBtns.forEach(b => b.onclick = null); // Disable clicks
+
+    if (selectedIdx === correctIdx) {
+        btn.classList.add('correct');
+        challengeState.score++;
+    } else {
+        btn.classList.add('wrong');
+        allBtns[correctIdx].classList.add('correct');
+    }
+
+    setTimeout(() => {
+        challengeState.qIndex++;
+        loadQuestion();
+    }, 1000);
+}
+
+function highlightAnswer(selectedBtn, correctIdx) {
+    const allBtns = document.querySelectorAll('.option-btn');
+    allBtns[correctIdx].classList.add('correct');
+    if(selectedBtn) selectedBtn.classList.add('wrong');
+}
+
+function endQuiz() {
+    navigateTo('view-quiz-result');
+    const score = challengeState.score;
+    document.getElementById('result-score').innerText = `${score}/5`;
+    
+    const todayStr = new Date().toISOString().split('T')[0];
+    localStorage.setItem(DB_CHALLENGE, todayStr);
+
+    if (score === 5) {
+        document.getElementById('result-emoji').innerText = '🔥';
+        document.getElementById('result-text').innerText = 'Perfect Score!';
+        document.getElementById('result-sub').innerText = 'Streak +1 added!';
+        if(incrementStreak()) {
+             // Confetti fired inside incrementStreak
+        } else {
+             document.getElementById('result-sub').innerText = 'Streak already active for today!';
+        }
+    } else {
+        document.getElementById('result-emoji').innerText = '😢';
+        document.getElementById('result-text').innerText = 'So Close!';
+        document.getElementById('result-sub').innerText = 'Get 5/5 to increase your streak. Try again tomorrow!';
     }
 }
 
-// --- TASK RENDERING ---
+// --- STANDARD TASK FUNCTIONS ---
 function renderTasks() {
     const container = document.getElementById('task-list');
     container.innerHTML = '';
     
     let filteredTasks = tasks;
     const todayStr = new Date().toISOString().split('T')[0];
+    const searchQ = document.getElementById('task-search').value.toLowerCase();
 
-    if (currentFilter === 'priority') filteredTasks = tasks.filter(t => t.priority === 'High' && !t.completed);
-    else if (currentFilter === 'today') filteredTasks = tasks.filter(t => t.date === todayStr && !t.completed);
+    // 1. Apply Search Filter
+    if(searchQ) {
+        filteredTasks = filteredTasks.filter(t => 
+            t.title.toLowerCase().includes(searchQ) || 
+            t.subject.toLowerCase().includes(searchQ)
+        );
+    }
+
+    // 2. Apply Category Filter
+    if (currentFilter === 'priority') filteredTasks = filteredTasks.filter(t => t.priority === 'High' && !t.completed);
+    else if (currentFilter === 'today') filteredTasks = filteredTasks.filter(t => t.date === todayStr && !t.completed);
     else if (currentFilter === 'exams') {
-        filteredTasks = tasks.filter(t => t.type === 'Exam');
+        filteredTasks = filteredTasks.filter(t => t.type === 'Exam');
         filteredTasks.sort((a,b) => new Date(a.date) - new Date(b.date));
     } else {
         filteredTasks.sort((a,b) => (a.completed === b.completed) ? 0 : a.completed ? 1 : -1);
@@ -190,7 +414,6 @@ function renderTasks() {
     });
 }
 
-// --- TASK ACTIONS ---
 function openTaskDetail(id) {
     const task = tasks.find(t => t.id === id);
     if (!task) return;
@@ -204,8 +427,15 @@ function openTaskDetail(id) {
     toggle.checked = task.completed;
     document.getElementById('completion-text').innerText = task.completed ? "Completed ✅" : "Mark as Completed";
 
+    // Populate Subjects
     const subSelect = document.getElementById('detail-subject');
     subSelect.innerHTML = '';
+    const subjectsMap = {
+        Science: ["Physics", "Chemistry", "Mathematics", "Biology", "Computer Science", "English"],
+        Commerce: ["Accountancy", "Business Studies", "Economics", "Mathematics", "English"],
+        Humanities: ["History", "Political Science", "Geography", "Economics", "Psychology", "English"],
+        General: ["Mathematics", "English", "Science", "Social Science", "Computer", "Hindi"]
+    };
     let list = subjectsMap.General;
     if (user.class >= 11) list = subjectsMap[user.stream] || subjectsMap.General;
     list.forEach(s => {
@@ -250,11 +480,15 @@ function toggleTaskCompletion() {
     const taskIndex = tasks.findIndex(t => t.id === id);
     if(taskIndex > -1) {
         if (isComplete && !tasks[taskIndex].completed) {
+            // Check for streak increase
             updateStreakOnCompletion(tasks[taskIndex].date);
+            
+            // 🔥 ADDED: Fire confetti for every completion for immediate reward!
+            fireConfetti(); 
         }
         tasks[taskIndex].completed = isComplete;
         localStorage.setItem(DB_TASKS, JSON.stringify(tasks));
-        updateUI(); // FIX 2: Update badge immediately
+        updateUI();
     }
 }
 
@@ -265,6 +499,34 @@ function deleteTaskFromModal() {
         localStorage.setItem(DB_TASKS, JSON.stringify(tasks));
         closeAllModals();
         renderTasks();
+    }
+}
+
+function renderStreakPage() {
+    const count = streakData.count;
+    document.getElementById('streak-count-large').innerText = count;
+    document.getElementById('current-milestone').innerText = `${count} Days`;
+    const milestones = [3, 7, 14, 30, 50, 100];
+    let nextGoal = milestones.find(m => m > count) || (count + 10);
+    document.getElementById('next-milestone').innerText = `Next Goal: ${nextGoal}`;
+    let percentage = (count / nextGoal) * 100;
+    if(percentage > 100) percentage = 100;
+    document.getElementById('streak-bar').style.width = `${percentage}%`;
+
+    const msgEl = document.getElementById('streak-msg');
+    if(count === 0) msgEl.innerText = "Start a task or challenge today!";
+    else if(count < 3) msgEl.innerText = "You're warming up! Keep going.";
+    else if(count < 7) msgEl.innerText = "You're on fire! Almost a week!";
+    else msgEl.innerText = "Unstoppable! Incredible consistency.";
+}
+
+function shareStreak() {
+    const text = `I'm on a ${streakData.count}-day study streak using Study Ping 📚🔥`;
+    if (navigator.share) {
+        navigator.share({ title: 'Study Ping Streak', text: text, url: window.location.href }).catch(console.error);
+    } else {
+        navigator.clipboard.writeText(text);
+        alert("Text copied to clipboard!");
     }
 }
 
@@ -295,18 +557,21 @@ function updateUI() {
     let details = `Class ${user.class}`;
     if(user.stream !== 'General') details += ` • ${user.stream}`;
     document.getElementById('side-class').innerText = details;
-    
-    // Update Streak Badge
     const badge = document.getElementById('dashboard-streak');
     badge.innerText = `🔥 Streak: ${streakData.count} days`;
     badge.classList.remove('hidden');
 }
 
-// --- HELPERS ---
 function openTaskModal() {
     if(!user) return alert("Please complete setup first.");
     const subSelect = document.getElementById('task-subject');
     subSelect.innerHTML = '';
+    const subjectsMap = {
+        Science: ["Physics", "Chemistry", "Mathematics", "Biology", "Computer Science", "English"],
+        Commerce: ["Accountancy", "Business Studies", "Economics", "Mathematics", "English"],
+        Humanities: ["History", "Political Science", "Geography", "Economics", "Psychology", "English"],
+        General: ["Mathematics", "English", "Science", "Social Science", "Computer", "Hindi"]
+    };
     let list = subjectsMap.General;
     if (user.class >= 11) list = subjectsMap[user.stream] || subjectsMap.General;
     list.forEach(s => {
@@ -324,7 +589,6 @@ function saveTask() {
     const sub = document.getElementById('task-subject').value;
     const date = document.getElementById('task-date').value;
     const prio = document.getElementById('task-priority').value;
-
     if(!title || !date) return alert("Title and Date are required!");
     const newTask = { id: Date.now(), title, type, subject: sub, date, priority: prio, completed: false };
     tasks.push(newTask);

@@ -1,14 +1,30 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-5QTB5W7HW2"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-5QTB5W7HW2');
+    </script>
+    <link rel="icon" type="image/png" href="./icon-192.png">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Study Ping v1.3</title>
-    <link rel="icon" type="image/png" href="./favicon.png">
+    <title>Study Ping v1.4</title>
+    
+    <link rel="manifest" href="./manifest.json">
+    <link rel="apple-touch-icon" href="./icon-192.png">
+    <meta name="theme-color" content="#2563EB">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body class="light-mode">
+
+    <div id="confetti-container"></div>
 
     <div id="loading-screen">
         <div class="loader-content">
@@ -46,7 +62,7 @@
             <button class="menu-btn" onclick="toggleSidebar()">
                 <div class="line"></div><div class="line"></div><div class="line"></div>
             </button>
-            <div class="brand">Study Ping <span class="version-badge">v1.3</span></div>
+            <div class="brand">Study Ping <span class="version-badge">v1.4</span></div>
         </header>
 
         <nav id="sidebar">
@@ -55,6 +71,9 @@
                 <li onclick="setFilter('priority')">🔥 High Priority</li>
                 <li onclick="setFilter('today')">⏰ Due Today</li>
                 <li onclick="setFilter('exams')">📝 Exams</li>
+                
+                <li onclick="initChallenge()">🎮 10-Second Challenge</li>
+
                 <li onclick="navigateTo('view-streak')">⚡ My Streak</li>
                 <li onclick="navigateTo('view-about')">ℹ️ About App</li>
                 <li>
@@ -91,6 +110,11 @@
                     <div id="dashboard-streak" class="streak-badge hidden" onclick="navigateTo('view-streak')">🔥 0 days</div>
                 </div>
             </div>
+
+            <div class="search-container fade-in">
+                <input type="text" id="task-search" class="search-input" placeholder="🔍 Search tasks or subjects..." onkeyup="filterTasksBySearch()">
+            </div>
+
             <div id="task-list" class="fade-in"></div>
         </main>
 
@@ -102,17 +126,13 @@
             <button class="back-btn" onclick="navigateTo('view-main')">← Back</button>
             <h2>My Streak</h2>
         </div>
-        
         <div class="streak-container fade-in">
             <div class="streak-ring">
                 <div class="streak-fire">🔥</div>
             </div>
-            
             <h1 id="streak-count-large">0</h1>
             <h3>Day Streak</h3>
-            
             <p id="streak-msg">Keep the fire burning!</p>
-
             <div class="streak-progress-box">
                 <div class="progress-labels">
                     <span id="current-milestone">0</span>
@@ -122,10 +142,66 @@
                     <div id="streak-bar" class="progress-fill" style="width: 0%"></div>
                 </div>
             </div>
-
             <button class="btn-primary share-btn" onclick="shareStreak()">
                 📤 Share Streak
             </button>
+        </div>
+    </section>
+
+    <section id="view-challenge-intro" class="page-view hidden no-padding">
+        <div class="sub-header">
+            <button class="back-btn" onclick="navigateTo('view-main')">← Back</button>
+            <h2>Daily Challenge</h2>
+        </div>
+        <div class="challenge-container fade-in">
+            <div class="challenge-icon">🎮</div>
+            <h2>10-Second Challenge</h2>
+            <p>Answer 5 questions correctly to boost your streak! You have 10 seconds per question.</p>
+            <div class="rules-box">
+                <ul>
+                    <li>5 Questions</li>
+                    <li>10 Seconds Each</li>
+                    <li>Must get 5/5 for Streak</li>
+                    <li>One attempt per day</li>
+                </ul>
+            </div>
+            
+            <div id="challenge-subject-select" class="hidden">
+                <h4 style="margin-top:20px;">Select Subject:</h4>
+                <div id="subject-buttons" class="subject-grid"></div>
+                <div class="future-upgrades">
+                    <strong>Future upgrades:</strong><br>
+                    • Bigger question bank • Chapter-wise tagging • Difficulty levels • Class-wise expansion • User-submitted questions
+                </div>
+            </div>
+
+            <div id="challenge-blocked" class="hidden">
+                <h3 style="color:var(--text-muted)">You've played today!</h3>
+                <p>Come back tomorrow for another chance.</p>
+                <button class="btn-primary" onclick="navigateTo('view-main')">Return Home</button>
+            </div>
+        </div>
+    </section>
+
+    <section id="view-quiz" class="page-view hidden no-padding">
+        <div class="quiz-header">
+            <span id="quiz-q-num">Q1/5</span>
+            <span id="quiz-timer">10s</span>
+        </div>
+        <div class="timer-bar"><div id="timer-fill"></div></div>
+        <div class="quiz-container fade-in">
+            <h3 id="quiz-question">Question text goes here?</h3>
+            <div id="quiz-options" class="options-grid"></div>
+        </div>
+    </section>
+
+    <section id="view-quiz-result" class="page-view hidden no-padding">
+        <div class="streak-container fade-in">
+            <div class="streak-fire" id="result-emoji">🎉</div>
+            <h1 id="result-score">0/5</h1>
+            <h3 id="result-text">Good Job!</h3>
+            <p id="result-sub"> Streak updated?</p>
+            <button class="btn-primary" onclick="navigateTo('view-main')">Continue</button>
         </div>
     </section>
 
@@ -134,54 +210,16 @@
             <button class="back-btn" onclick="navigateTo('view-main')">← Back</button>
             <h2>About</h2>
         </div>
-        
         <div class="about-body fade-in">
             <div class="about-logo">⚡</div>
             <h3>Study Ping</h3>
-            <div class="version-tag">Version v1.3</div>
-            
+            <div class="version-tag">Version v1.4</div>
             <h4 style="text-align: center; margin-bottom: 20px;">⭐ Study Ping — Key Features</h4>
-            
-            <div class="feature-block">
-                <strong>📋 Smart Task Management</strong>
-                <p>Add homework, exams, class tests, and assignments in one place with due dates and priorities.</p>
-            </div>
-
-            <div class="feature-block">
-                <strong>🎓 Class & Stream-Based Subjects</strong>
-                <p>Subjects automatically adapt based on your class and stream (Science, Commerce, or Humanities for Classes 11 & 12).</p>
-            </div>
-
-            <div class="feature-block">
-                <strong>⏰ Priority & Due-Date Views</strong>
-                <p>Quickly see high-priority tasks and what’s due today, so nothing important is missed.</p>
-            </div>
-
-            <div class="feature-block">
-                <strong>🧠 Exams Corner</strong>
-                <p>A dedicated exams page that shows all upcoming exams, sorted by nearest date.</p>
-            </div>
-
-            <div class="feature-block">
-                <strong>🔥 Study Streaks</strong>
-                <p>Stay consistent by completing tasks on time and build a daily study streak.</p>
-            </div>
-
-            <div class="feature-block">
-                <strong>✏️ Editable Tasks</strong>
-                <p>Tap on any task to view details, edit it, or mark it as completed.</p>
-            </div>
-
-            <div class="feature-block">
-                <strong>💾 Works Offline & Keeps Data Private</strong>
-                <p>Your data is saved on your device and works even without internet.</p>
-            </div>
-
-            <div class="feature-block">
-                <strong>📱 App-Like Experience</strong>
-                <p>Fast, mobile-friendly design that feels like a real app when added to your home screen.</p>
-            </div>
-
+            <div class="feature-block"><strong>📋 Smart Task Management</strong><p>Add homework, exams, and assignments with due dates.</p></div>
+            <div class="feature-block"><strong>🔍 Search & Filter</strong><p>Instantly find tasks by title or subject.</p></div>
+            <div class="feature-block"><strong>🎮 10-Second Challenge</strong><p>Test your knowledge daily and earn streaks.</p></div>
+            <div class="feature-block"><strong>🔥 Study Streaks</strong><p>Build habits by completing tasks or winning challenges.</p></div>
+            <div class="feature-block"><strong>📱 App-Like Experience</strong><p>Add to Home Screen, works offline, and sends notifications.</p></div>
             <div class="dev-credit">
                 <p>Developed by</p>
                 <strong>Arush Arora & Aksh Choudhary</strong>
