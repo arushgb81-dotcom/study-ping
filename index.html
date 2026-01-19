@@ -11,15 +11,14 @@
     <link rel="icon" type="image/png" href="./icon-192.png">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Study Ping v1.4</title>
+    <title>Study Ping v1.5</title>
     
     <link rel="manifest" href="./manifest.json">
     <link rel="apple-touch-icon" href="./icon-192.png">
     <meta name="theme-color" content="#2563EB">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-   
-    <!-- Favicon (browser tab) -->
+    
     <link rel="icon" href="./favicon.png" sizes="32x32" type="image/png">
     <link rel="icon" href="./favicon.png" sizes="16x16" type="image/png">
     <link rel="shortcut icon" href="./favicon.png">
@@ -30,6 +29,15 @@
 <body class="light-mode">
 
     <div id="confetti-container"></div>
+
+    <div id="smart-ping-toast" class="smart-toast hidden">
+        <div class="ping-icon">💡</div>
+        <div class="ping-content">
+            <h4 id="ping-title">Study Tip</h4>
+            <p id="ping-msg">...</p>
+        </div>
+        <button class="close-ping" onclick="dismissPing()">✕</button>
+    </div>
 
     <div id="loading-screen">
         <div class="loader-content">
@@ -45,7 +53,22 @@
                 <div class="setup-icon">🎓</div>
                 <h2>Create Profile</h2>
                 <p>Let's set up your student profile.</p>
+
+                <div style="width:100%; text-align:left; margin-bottom:10px;">
+                    <label class="input-label">Who are you?</label>
+                    <select id="setup-role" class="styled-input" onchange="handleRoleChange()">
+                        <option value="Student" selected>Student</option>
+                        <option value="Teacher">Teacher (Beta)</option>
+                    </select>
+                </div>
+
                 <input type="text" id="setup-name" class="styled-input" placeholder="Full Name">
+                
+                <div id="teacher-fields" class="hidden" style="width:100%;">
+                    <input type="text" id="teacher-subjects" class="styled-input" placeholder="Subjects Taught (comma separated)">
+                    <input type="text" id="teacher-classes" class="styled-input" placeholder="Classes Taught">
+                </div>
+
                 <select id="setup-class" class="styled-input" onchange="toggleStream('setup')">
                     <option value="" disabled selected>Select Class</option>
                 </select>
@@ -67,7 +90,7 @@
             <button class="menu-btn" onclick="toggleSidebar()">
                 <div class="line"></div><div class="line"></div><div class="line"></div>
             </button>
-            <div class="brand">Study Ping <span class="version-badge">v1.4</span></div>
+            <div class="brand">Study Ping <span class="version-badge">v1.5</span></div>
         </header>
 
         <nav id="sidebar">
@@ -77,6 +100,8 @@
                 <li onclick="setFilter('today')">⏰ Due Today</li>
                 <li onclick="setFilter('exams')">📝 Exams</li>
                 
+                <li onclick="openTutorials()">📚 Tutorials <span style="font-size:0.7em; background:#EF4444; color:white; padding:2px 6px; border-radius:4px; margin-left:auto;">New</span></li>
+
                 <li onclick="initChallenge()">🎮 10-Second Challenge</li>
 
                 <li onclick="navigateTo('view-streak')">⚡ My Streak</li>
@@ -93,6 +118,8 @@
                         <span class="slider round"></span>
                     </label>
                 </li>
+
+                <li onclick="appLogout()" style="margin-top:15px; border-top:1px solid rgba(0,0,0,0.1); padding-top:15px; color:#EF4444;">🚪 Logout</li>
             </ul>
 
             <div class="sidebar-footer">
@@ -124,6 +151,31 @@
         </main>
 
         <button id="fab" onclick="openTaskModal()">+</button>
+    </section>
+
+    <section id="view-tutorials" class="page-view hidden no-padding">
+        <div class="sub-header">
+            <button class="menu-btn" onclick="toggleSidebar()">
+                <div class="line"></div><div class="line"></div><div class="line"></div>
+            </button>
+            <h2>Smart Learn</h2>
+        </div>
+        <main class="content fade-in">
+            <div class="hero">
+                <h1>Syllabus</h1>
+                <p>Select a subject to find learning resources.</p>
+            </div>
+            
+            <div id="tut-subject-container" class="fade-in">
+                <div id="tut-subject-list" class="subject-grid"></div>
+            </div>
+
+            <div id="tut-chapter-container" class="hidden fade-in">
+                <button class="back-btn-inline" onclick="closeTutorialChapters()">← Back to Subjects</button>
+                <h3 id="tut-active-subject" style="margin-bottom:15px;">Chapters</h3>
+                <div id="tut-chapter-list"></div>
+            </div>
+        </main>
     </section>
 
     <section id="view-streak" class="page-view hidden no-padding">
@@ -170,16 +222,14 @@
                     <li>One attempt per day</li>
                 </ul>
             </div>
-            
             <div id="challenge-subject-select" class="hidden">
                 <h4 style="margin-top:20px;">Select Subject:</h4>
                 <div id="subject-buttons" class="subject-grid"></div>
                 <div class="future-upgrades">
                     <strong>Future upgrades:</strong><br>
-                    • Bigger question bank • Chapter-wise tagging • Difficulty levels • Class-wise expansion • User-submitted questions
+                    • Bigger question bank • Chapter-wise tagging • Difficulty levels
                 </div>
             </div>
-
             <div id="challenge-blocked" class="hidden">
                 <h3 style="color:var(--text-muted)">You've played today!</h3>
                 <p>Come back tomorrow for another chance.</p>
@@ -195,7 +245,7 @@
         </div>
         <div class="timer-bar"><div id="timer-fill"></div></div>
         <div class="quiz-container fade-in">
-            <h3 id="quiz-question">Question text goes here?</h3>
+            <h3 id="quiz-question">Question?</h3>
             <div id="quiz-options" class="options-grid"></div>
         </div>
     </section>
@@ -218,13 +268,12 @@
         <div class="about-body fade-in">
             <div class="about-logo">⚡</div>
             <h3>Study Ping</h3>
-            <div class="version-tag">Version v1.4</div>
+            <div class="version-tag">Version v1.5 (Smart AI Update)</div>
             <h4 style="text-align: center; margin-bottom: 20px;">⭐ Study Ping — Key Features</h4>
-            <div class="feature-block"><strong>📋 Smart Task Management</strong><p>Add homework, exams, and assignments with due dates.</p></div>
-            <div class="feature-block"><strong>🔍 Search & Filter</strong><p>Instantly find tasks by title or subject.</p></div>
-            <div class="feature-block"><strong>🎮 10-Second Challenge</strong><p>Test your knowledge daily and earn streaks.</p></div>
-            <div class="feature-block"><strong>🔥 Study Streaks</strong><p>Build habits by completing tasks or winning challenges.</p></div>
-            <div class="feature-block"><strong>📱 App-Like Experience</strong><p>Add to Home Screen, works offline, and sends notifications.</p></div>
+            <div class="feature-block"><strong>🧠 Smart Pings</strong><p>Context-aware study reminders.</p></div>
+            <div class="feature-block"><strong>📋 Smart Task Management</strong><p>Add homework, exams, and assignments.</p></div>
+            <div class="feature-block"><strong>📚 Dynamic Tutorials</strong><p>Search standard syllabus topics instantly.</p></div>
+            <div class="feature-block"><strong>🎮 10-Second Challenge</strong><p>Test your knowledge daily.</p></div>
             <div class="dev-credit">
                 <p>Developed by</p>
                 <strong>Arush Arora & Aksh Choudhary</strong>
@@ -318,6 +367,29 @@
             </div>
             <button class="btn-primary" onclick="saveProfileChanges()">Update Profile</button>
             <button class="btn-cancel" onclick="closeAllModals()">Cancel</button>
+        </div>
+    </div>
+
+    <div id="welcome-modal" class="modal-overlay hidden" style="z-index: 4000;">
+        <div class="modal-content slide-up" style="text-align:center;">
+            <div class="setup-icon">👋</div>
+            <h3 id="welcome-title">Welcome!</h3>
+            <p>We're glad you're here to organize your studies.</p>
+            <button class="btn-primary" onclick="dismissWelcome()">Continue</button>
+        </div>
+    </div>
+
+    <div id="notif-modal" class="modal-overlay hidden" style="z-index: 3999;">
+        <div class="modal-content slide-up">
+            <h3>🔔 Get Reminders</h3>
+            <p>Allow Study Ping to send context-aware study reminders.</p>
+            <label class="input-label">Remind me before due time:</label>
+            <select id="notif-timer" class="styled-input">
+                <option value="30">30 Minutes before</option>
+                <option value="60">1 Hour before</option>
+            </select>
+            <button class="btn-primary" onclick="requestNotifPermission()">Enable Smart Pings</button>
+            <button class="btn-cancel" onclick="closeNotifModal()">Maybe Later</button>
         </div>
     </div>
 
