@@ -27,7 +27,6 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body class="light-mode">
-
     <div id="confetti-container"></div>
 
     <div id="smart-ping-toast" class="smart-toast hidden">
@@ -52,29 +51,32 @@
             <div class="setup-card fade-in">
                 <div class="setup-icon">🎓</div>
                 <h2>Create Profile</h2>
-                <p>Let's set up your student profile.</p>
+                <p>Let's set up your profile.</p>
 
                 <div style="width:100%; text-align:left; margin-bottom:10px;">
-                    <label class="input-label">Who are you?</label>
+                    <label class="input-label">Role</label>
                     <select id="setup-role" class="styled-input" onchange="handleRoleChange()">
                         <option value="Student" selected>Student</option>
-                        <option value="Teacher">Teacher (Beta)</option>
+                        <option value="Teacher">Teacher</option>
                     </select>
                 </div>
 
                 <input type="text" id="setup-name" class="styled-input" placeholder="Full Name">
                 
-                <div id="teacher-fields" class="hidden" style="width:100%;">
-                    <input type="text" id="teacher-subjects" class="styled-input" placeholder="Subjects Taught (comma separated)">
-                    <input type="text" id="teacher-classes" class="styled-input" placeholder="Classes Taught">
+                <div id="teacher-fields" class="hidden">
+                    <input type="text" id="teacher-subjects" class="styled-input" placeholder="Subjects (e.g. Physics, Math)">
                 </div>
 
                 <select id="setup-class" class="styled-input" onchange="toggleStream('setup')">
-                    <option value="" disabled selected>Select Class</option>
+                    <option value="" disabled selected>Select Grade/Class</option>
+                    <option value="9">Grade 9</option>
+                    <option value="10">Grade 10</option>
+                    <option value="11">Grade 11</option>
+                    <option value="12">Grade 12</option>
                 </select>
+
                 <div id="setup-stream-div" class="hidden">
                     <select id="setup-stream" class="styled-input">
-                        <option value="" disabled selected>Select Stream</option>
                         <option value="Science">Science</option>
                         <option value="Commerce">Commerce</option>
                         <option value="Humanities">Humanities</option>
@@ -96,21 +98,18 @@
         <nav id="sidebar">
             <ul class="nav-menu">
                 <li onclick="setFilter('all')">🏠 Dashboard</li>
-                <li onclick="setFilter('priority')">🔥 High Priority</li>
-                <li onclick="setFilter('today')">⏰ Due Today</li>
-                <li onclick="setFilter('exams')">📝 Exams</li>
                 
-                <li onclick="openTutorials()">📚 Tutorials <span style="font-size:0.7em; background:#EF4444; color:white; padding:2px 6px; border-radius:4px; margin-left:auto;">New</span></li>
+                <div id="student-nav-items">
+                    <li onclick="navigateTo('view-streak')">⚡ My Streak</li>
+                    <li onclick="initChallenge()">🎮 10-Sec Challenge</li>
+                </div>
 
-                <li onclick="initChallenge()">🎮 10-Second Challenge</li>
+                <li onclick="openTutorials()">📚 Smart Learn</li>
+                <li onclick="window.open('https://docs.google.com/presentation/d/YOUR_SLIDES_ID/edit', '_blank')">🖼️ Google Slides</li>
+                
+                <li onclick="openClassroom()">🏫 My Classroom</li>
 
-                <li onclick="navigateTo('view-streak')">⚡ My Streak</li>
-                <li onclick="navigateTo('view-about')">ℹ️ About App</li>
-                <li>
-                    <a href="https://forms.gle/z73sisG5NsvvXJiH6" target="_blank" class="sidebar-link">
-                        💬 Send Feedback ↗
-                    </a>
-                </li>
+                <li onclick="navigateTo('view-about')">ℹ️ About</li>
                 <li class="toggle-li">
                     <span>🌙 Dark Mode</span>
                     <label class="switch">
@@ -118,17 +117,14 @@
                         <span class="slider round"></span>
                     </label>
                 </li>
-
-                <li onclick="appLogout()" style="margin-top:15px; border-top:1px solid rgba(0,0,0,0.1); padding-top:15px; color:#EF4444;">🚪 Logout</li>
+                <li onclick="appLogout()" style="color:#EF4444;">🚪 Logout</li>
             </ul>
-
             <div class="sidebar-footer">
                 <div class="profile-row">
                     <div class="user-info">
                         <strong id="side-name">User</strong>
                         <span id="side-class">Class --</span>
                     </div>
-                    <button class="edit-btn" onclick="openEditModal()">✏️</button>
                 </div>
             </div>
         </nav>
@@ -137,163 +133,67 @@
         <main class="content">
             <div class="hero fade-in">
                 <h1 id="page-title">Hi!</h1>
-                <div class="hero-row">
-                    <p id="page-subtitle">Here is your plan.</p>
-                    <div id="dashboard-streak" class="streak-badge hidden" onclick="navigateTo('view-streak')">🔥 0 days</div>
-                </div>
+                <p id="page-subtitle">Your Schedule</p>
+            </div>
+
+            <div id="classroom-brief" class="feature-block hidden" style="border-left: 5px solid var(--primary);">
+                <strong id="class-status-title">Not in a Classroom</strong>
+                <p id="class-status-msg">Join a class to receive teacher tasks.</p>
+                <button class="edit-btn" style="margin-top:10px" onclick="openClassroom()">Manage Class</button>
             </div>
 
             <div class="search-container fade-in">
-                <input type="text" id="task-search" class="search-input" placeholder="🔍 Search tasks or subjects..." onkeyup="filterTasksBySearch()">
+                <input type="text" id="task-search" class="search-input" placeholder="🔍 Search tasks..." onkeyup="filterTasksBySearch()">
             </div>
 
             <div id="task-list" class="fade-in"></div>
         </main>
-
         <button id="fab" onclick="openTaskModal()">+</button>
     </section>
 
-    <section id="view-tutorials" class="page-view hidden no-padding">
-        <div class="sub-header">
-            <button class="menu-btn" onclick="toggleSidebar()">
-                <div class="line"></div><div class="line"></div><div class="line"></div>
-            </button>
-            <h2>Smart Learn</h2>
-        </div>
-        <main class="content fade-in">
-            <div class="hero">
-                <h1>Syllabus</h1>
-                <p>Select a subject to find learning resources.</p>
+    <div id="classroom-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header-row">
+                <h3 id="class-modal-title">Classroom</h3>
+                <button class="close-icon" onclick="closeAllModals()">✕</button>
             </div>
             
-            <div id="tut-subject-container" class="fade-in">
-                <div id="tut-subject-list" class="subject-grid"></div>
+            <div id="student-class-view" class="hidden">
+                <p>Enter the code provided by your teacher:</p>
+                <input type="text" id="join-code-input" class="styled-input" placeholder="6-Digit Code">
+                <button class="btn-primary" onclick="joinClassroom()">Join Class</button>
             </div>
 
-            <div id="tut-chapter-container" class="hidden fade-in">
-                <button class="back-btn-inline" onclick="closeTutorialChapters()">← Back to Subjects</button>
-                <h3 id="tut-active-subject" style="margin-bottom:15px;">Chapters</h3>
-                <div id="tut-chapter-list"></div>
-            </div>
-        </main>
-    </section>
-
-    <section id="view-streak" class="page-view hidden no-padding">
-        <div class="sub-header">
-            <button class="back-btn" onclick="navigateTo('view-main')">← Back</button>
-            <h2>My Streak</h2>
-        </div>
-        <div class="streak-container fade-in">
-            <div class="streak-ring">
-                <div class="streak-fire">🔥</div>
-            </div>
-            <h1 id="streak-count-large">0</h1>
-            <h3>Day Streak</h3>
-            <p id="streak-msg">Keep the fire burning!</p>
-            <div class="streak-progress-box">
-                <div class="progress-labels">
-                    <span id="current-milestone">0</span>
-                    <span id="next-milestone">Next Goal: 3</span>
+            <div id="teacher-class-view" class="hidden">
+                <div class="feature-block">
+                    <strong>Your Class Code:</strong>
+                    <h1 id="generated-class-code" style="letter-spacing: 5px; color: var(--primary);">------</h1>
+                    <p>Share this code with your students.</p>
                 </div>
-                <div class="progress-track">
-                    <div id="streak-bar" class="progress-fill" style="width: 0%"></div>
+                <div id="student-list-container">
+                    <label class="input-label">Joined Students (0)</label>
+                    <ul id="joined-students-list" style="font-size: 0.9rem; color: var(--text-muted);"></ul>
                 </div>
             </div>
-            <button class="btn-primary share-btn" onclick="shareStreak()">
-                📤 Share Streak
-            </button>
+            <button class="btn-cancel" onclick="closeAllModals()">Close</button>
         </div>
-    </section>
-
-    <section id="view-challenge-intro" class="page-view hidden no-padding">
-        <div class="sub-header">
-            <button class="back-btn" onclick="navigateTo('view-main')">← Back</button>
-            <h2>Daily Challenge</h2>
-        </div>
-        <div class="challenge-container fade-in">
-            <div class="challenge-icon">🎮</div>
-            <h2>10-Second Challenge</h2>
-            <p>Answer 5 questions correctly to boost your streak! You have 10 seconds per question.</p>
-            <div class="rules-box">
-                <ul>
-                    <li>5 Questions</li>
-                    <li>10 Seconds Each</li>
-                    <li>Must get 5/5 for Streak</li>
-                    <li>One attempt per day</li>
-                </ul>
-            </div>
-            <div id="challenge-subject-select" class="hidden">
-                <h4 style="margin-top:20px;">Select Subject:</h4>
-                <div id="subject-buttons" class="subject-grid"></div>
-                <div class="future-upgrades">
-                    <strong>Future upgrades:</strong><br>
-                    • Bigger question bank • Chapter-wise tagging • Difficulty levels
-                </div>
-            </div>
-            <div id="challenge-blocked" class="hidden">
-                <h3 style="color:var(--text-muted)">You've played today!</h3>
-                <p>Come back tomorrow for another chance.</p>
-                <button class="btn-primary" onclick="navigateTo('view-main')">Return Home</button>
-            </div>
-        </div>
-    </section>
-
-    <section id="view-quiz" class="page-view hidden no-padding">
-        <div class="quiz-header">
-            <span id="quiz-q-num">Q1/5</span>
-            <span id="quiz-timer">10s</span>
-        </div>
-        <div class="timer-bar"><div id="timer-fill"></div></div>
-        <div class="quiz-container fade-in">
-            <h3 id="quiz-question">Question?</h3>
-            <div id="quiz-options" class="options-grid"></div>
-        </div>
-    </section>
-
-    <section id="view-quiz-result" class="page-view hidden no-padding">
-        <div class="streak-container fade-in">
-            <div class="streak-fire" id="result-emoji">🎉</div>
-            <h1 id="result-score">0/5</h1>
-            <h3 id="result-text">Good Job!</h3>
-            <p id="result-sub"> Streak updated?</p>
-            <button class="btn-primary" onclick="navigateTo('view-main')">Continue</button>
-        </div>
-    </section>
-
-    <section id="view-about" class="page-view hidden no-padding">
-        <div class="sub-header">
-            <button class="back-btn" onclick="navigateTo('view-main')">← Back</button>
-            <h2>About</h2>
-        </div>
-        <div class="about-body fade-in">
-            <div class="about-logo">⚡</div>
-            <h3>Study Ping</h3>
-            <div class="version-tag">Version v1.5 (Smart AI Update)</div>
-            <h4 style="text-align: center; margin-bottom: 20px;">⭐ Study Ping — Key Features</h4>
-            <div class="feature-block"><strong>🧠 Smart Pings</strong><p>Context-aware study reminders.</p></div>
-            <div class="feature-block"><strong>📋 Smart Task Management</strong><p>Add homework, exams, and assignments.</p></div>
-            <div class="feature-block"><strong>📚 Dynamic Tutorials</strong><p>Search standard syllabus topics instantly.</p></div>
-            <div class="feature-block"><strong>🎮 10-Second Challenge</strong><p>Test your knowledge daily.</p></div>
-            <div class="dev-credit">
-                <p>Developed by</p>
-                <strong>Arush Arora & Aksh Choudhary</strong>
-            </div>
-        </div>
-    </section>
+    </div>
 
     <div id="task-modal" class="modal-overlay hidden">
         <div class="modal-content slide-up">
             <h3>New Task</h3>
             <input type="text" id="task-title" class="styled-input" placeholder="Task Title">
-            <label class="input-label">Type</label>
-            <select id="task-type" class="styled-input">
-                <option value="Homework">Homework</option>
-                <option value="Assignment">Assignment</option>
-                <option value="Class Test">Class Test</option>
-                <option value="Exam">Exam</option>
-            </select>
             <label class="input-label">Subject</label>
-            <select id="task-subject" class="styled-input"></select>
+            <input type="text" id="task-subject" class="styled-input" placeholder="e.g., Biology">
+            
+            <div id="teacher-assign-options" class="completion-box hidden">
+                <label class="switch">
+                    <input type="checkbox" id="push-to-students">
+                    <span class="slider round"></span>
+                </label>
+                <span>Send to all joined students?</span>
+            </div>
+
             <div class="input-row">
                 <div class="input-col">
                     <label class="input-label">Due Date</label>
@@ -302,9 +202,9 @@
                 <div class="input-col">
                     <label class="input-label">Priority</label>
                     <select id="task-priority" class="styled-input">
-                        <option value="Low">Low</option>
-                        <option value="Medium" selected>Medium</option>
                         <option value="High">High</option>
+                        <option value="Medium" selected>Medium</option>
+                        <option value="Low">Low</option>
                     </select>
                 </div>
             </div>
@@ -312,87 +212,7 @@
             <button class="btn-cancel" onclick="closeAllModals()">Cancel</button>
         </div>
     </div>
-
-    <div id="detail-modal" class="modal-overlay hidden">
-        <div class="modal-content slide-up">
-            <div class="modal-header-row">
-                <h3>Task Details</h3>
-                <button class="close-icon" onclick="closeAllModals()">✕</button>
-            </div>
-            <input type="hidden" id="detail-id">
-            <label class="input-label">Title</label>
-            <input type="text" id="detail-title" class="styled-input">
-            <label class="input-label">Type & Subject</label>
-            <div class="input-row">
-                <select id="detail-type" class="styled-input">
-                    <option value="Homework">Homework</option>
-                    <option value="Assignment">Assignment</option>
-                    <option value="Class Test">Class Test</option>
-                    <option value="Exam">Exam</option>
-                </select>
-                <select id="detail-subject" class="styled-input"></select>
-            </div>
-            <label class="input-label">Due Date & Priority</label>
-            <div class="input-row">
-                <input type="date" id="detail-date" class="styled-input">
-                <select id="detail-priority" class="styled-input">
-                    <option value="Low">Low</option>
-                    <option value="Medium">Medium</option>
-                    <option value="High">High</option>
-                </select>
-            </div>
-            <div class="completion-box">
-                <label class="switch">
-                    <input type="checkbox" id="detail-complete-toggle" onchange="toggleTaskCompletion()">
-                    <span class="slider round"></span>
-                </label>
-                <span id="completion-text">Mark as Completed</span>
-            </div>
-            <button class="btn-primary" onclick="updateTaskDetails()">Save Changes</button>
-            <button class="btn-delete" onclick="deleteTaskFromModal()">Delete Task</button>
-        </div>
-    </div>
-
-    <div id="edit-modal" class="modal-overlay hidden">
-        <div class="modal-content slide-up">
-            <h3>Edit Profile</h3>
-            <input type="text" id="edit-name" class="styled-input" placeholder="Name">
-            <select id="edit-class" class="styled-input" onchange="toggleStream('edit')"></select>
-            <div id="edit-stream-div" class="hidden">
-                <select id="edit-stream" class="styled-input">
-                    <option value="Science">Science</option>
-                    <option value="Commerce">Commerce</option>
-                    <option value="Humanities">Humanities</option>
-                </select>
-            </div>
-            <button class="btn-primary" onclick="saveProfileChanges()">Update Profile</button>
-            <button class="btn-cancel" onclick="closeAllModals()">Cancel</button>
-        </div>
-    </div>
-
-    <div id="welcome-modal" class="modal-overlay hidden" style="z-index: 4000;">
-        <div class="modal-content slide-up" style="text-align:center;">
-            <div class="setup-icon">👋</div>
-            <h3 id="welcome-title">Welcome!</h3>
-            <p>We're glad you're here to organize your studies.</p>
-            <button class="btn-primary" onclick="dismissWelcome()">Continue</button>
-        </div>
-    </div>
-
-    <div id="notif-modal" class="modal-overlay hidden" style="z-index: 3999;">
-        <div class="modal-content slide-up">
-            <h3>🔔 Get Reminders</h3>
-            <p>Allow Study Ping to send context-aware study reminders.</p>
-            <label class="input-label">Remind me before due time:</label>
-            <select id="notif-timer" class="styled-input">
-                <option value="30">30 Minutes before</option>
-                <option value="60">1 Hour before</option>
-            </select>
-            <button class="btn-primary" onclick="requestNotifPermission()">Enable Smart Pings</button>
-            <button class="btn-cancel" onclick="closeNotifModal()">Maybe Later</button>
-        </div>
-    </div>
-
+    
     <script src="script.js"></script>
 </body>
 </html>

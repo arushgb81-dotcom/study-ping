@@ -201,3 +201,39 @@ input:checked + .slider:before { transform: translateX(16px); }
 #sidebar-overlay {
   display: none;
 }
+/* --- CLASSROOM SYSTEM --- */
+#teacher-fields {
+    width: 100%;
+    margin-top: 10px;
+    border-top: 1px dashed var(--border);
+    padding-top: 10px;
+}
+
+.hidden { display: none !important; }
+
+/* Dashboard UI variations */
+body.is-teacher .student-only, 
+body.is-teacher #student-nav-items,
+body.is-teacher #dashboard-streak {
+    display: none !important;
+}
+
+body.is-student #teacher-assign-options {
+    display: none !important;
+}
+
+#generated-class-code {
+    text-align: center;
+    background: var(--bg-body);
+    padding: 15px;
+    border-radius: 12px;
+    margin: 10px 0;
+}
+
+/* Sidebar Fix for Teacher/Student toggle */
+.nav-menu div { width: 100%; }
+
+/* Teacher specific FAB color to differentiate */
+body.is-teacher #fab {
+    background: var(--primary);
+}
